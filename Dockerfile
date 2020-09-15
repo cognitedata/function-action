@@ -11,4 +11,7 @@ COPY pyproject.toml .
 RUN poetry install --no-dev
 
 COPY src src
+
+RUN ls
+RUN ls src
 CMD python ./src/index.py
