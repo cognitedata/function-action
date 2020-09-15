@@ -1,0 +1,5 @@
+functions:
+  - path: "some/path"
+    tenants:
+      - name: "my_tenant"
+        base_url: "my url"

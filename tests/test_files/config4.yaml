@@ -1,0 +1,12 @@
+function_folder: "."
+functions:
+  function1:
+    path: "some/path"
+    schedule:
+      cron: "* * * * NOT CRON"
+      name: "Simple schedule"
+    tenants:
+      - cdf_project: "my_tenant"
+        deployment_key_name: "DEPLOYMENT_KEY"
+        function_key_name: "FUNCTION_KEY"
+        cdf_base_url: "my url"

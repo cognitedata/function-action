@@ -1,0 +1,36 @@
+name: Anders Hafreager Test Function Deploy
+description: Deploy a Cognite Function
+inputs:
+  cdf_project:
+    description: The name of your cdf project.
+    required: false
+  cdf_deployment_credentials:
+    description: CDF API key that's provided to the deployed function.
+    required: false
+  cdf_function_credentials:
+    description: CDF API key that's used for deployment.
+    required: false
+  cdf_base_url:
+    description: Base url of your cdf project.
+    default: https://api.cognitedata.com
+    required: false
+  function_path:
+    description: Path of function inside of the function folder.
+    required: false
+  function_folder:
+    description: Path to the folder where source code for the function(s) is/are located.
+    default: .
+    required: false
+  file_path:
+    description: Path to configuration file. Only used when deployig using a configuration file.
+    default: config.yaml
+    required: false
+  function_name:
+    description: Name of function. Only used when deployig using a configuration file.
+    required: false
+outputs:
+  functionId: # id of output
+    description: The ID of the function output. Use this to do calls against the API!
+runs:
+  using: "docker"
+  image: Dockerfile
