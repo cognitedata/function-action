@@ -1,5 +1,7 @@
 FROM python:3-slim
 
+WORKDIR action
+
 RUN pip3 install poetry
 RUN poetry config virtualenvs.create false
 
@@ -9,4 +11,4 @@ COPY pyproject.toml .
 RUN poetry install --no-dev
 
 COPY src src
-CMD python src/index.py
+CMD python ./src/index.py
