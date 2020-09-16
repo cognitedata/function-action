@@ -14,4 +14,4 @@ COPY src src
 
 RUN ls
 RUN ls src
-CMD python ./src/index.py
+ENTRYPOINT ["python", "./src/index.py"]
