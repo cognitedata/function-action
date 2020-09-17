@@ -1,5 +1,5 @@
-name: Anders Hafreager Test Function Deploy
-description: Deploy a Cognite Function
+name: Function Action
+description: Deploy a Cognite Function with schedule
 inputs:
   cdf_project:
     description: The name of your cdf project.
