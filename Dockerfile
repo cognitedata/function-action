@@ -12,4 +12,7 @@ RUN poetry install --no-dev
 
 COPY src src
 
+RUN ls
+RUN ls src
+
 CMD ls && python src/index.py
