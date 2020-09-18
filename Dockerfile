@@ -12,6 +12,4 @@ RUN poetry install --no-dev
 
 COPY src src
 
-RUN ls
-RUN ls src
-ENTRYPOINT ["python", "./src/index.py"]
+CMD ls && python src/index.py
