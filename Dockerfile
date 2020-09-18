@@ -5,12 +5,8 @@ RUN poetry config virtualenvs.create false
 
 COPY poetry.lock .
 COPY pyproject.toml .
-
 RUN poetry install --no-dev
 
 COPY src src
 
-RUN ls
-RUN ls src
-
-CMD ls && ls / && python /src/index.py
+CMD python /src/index.py
