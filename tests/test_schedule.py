@@ -6,7 +6,7 @@ from cognite.experimental.data_classes.functions import FunctionSchedule
 from src.schedule import deploy_schedule
 
 
-@pytest.mark.unit
+
 @patch("src.schedule.CogniteClient")
 def test_deploy_schedule(client_mock):
     schedules = [FunctionSchedule(id=1, name="s1"), FunctionSchedule(id=2, name="s2")]
