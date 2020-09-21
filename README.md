@@ -10,7 +10,7 @@ If you're using a configuration file you'll need to define the following argumen
 1. `function_name`: Name of the function to deploy. This value must match a value in your configuration file.
 2. `file_path`: Path to your configuration file.
 
-#### Example usage
+#### Example usage to deploy
 Workflow:
 ```yaml
 uses: cognitedata/function-action@v1
@@ -19,7 +19,7 @@ env:
   COGNITE_FUNCTION_CREDENTIALS: ${{ secret.COGNITE_FUNCTION_CREDENTIALS }}
 with:
   function_name: function1
-  file_path: ./config.yaml
+  config_file_path: ./config.yaml
 ```
 
 `config.yaml`:
@@ -36,6 +36,19 @@ functions:
         deployment_key_name: "COGNITE_DEPLOYMENT_CREDENTIALS"
         function_key_name: "COGNITE_FUNCTION_CREDENTIALS"
         cdf_base_url: "https://api.cognitedata.com"
+```
+
+#### Example usage to delete
+Workflow:
+```yaml
+uses: cognitedata/function-action@v1
+env:
+  COGNITE_DEPLOYMENTS_CREDENTIALS: ${{ secret.COGNITE_DEPLOYMENT_CREDENTIALS }}
+  COGNITE_FUNCTION_CREDENTIALS: ${{ secret.COGNITE_FUNCTION_CREDENTIALS }}
+  DELETE_PR_FUNCTION: "true"
+with:
+  function_name: function1
+  config_file_path: ./config.yaml
 ```
 
 
