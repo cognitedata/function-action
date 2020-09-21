@@ -4,9 +4,9 @@ from pathlib import Path
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 
-from config import get_config
-from function import deploy_function
-from schedule import deploy_schedule
+from src.config import get_config
+from src.function import deploy_function
+from src.schedule import deploy_schedule
 
 
 class MissingInput(Exception):
@@ -22,8 +22,8 @@ CDF_PROJECT = os.getenv("INPUT_CDF_PROJECT")
 CDF_DEPLOYMENT_CREDENTIALS = os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS")
 CDF_FUNCTION_CREDENTIALS = os.getenv("INPUT_CDF_FUNCTION_CREDENTIALS")
 CDF_BASE_URL = os.getenv("INPUT_CDF_BASE_URL")
+FUNCTION_FILE = os.getenv("INPUT_FUNCTION_FILE")
 FUNCTION_FOLDER = os.getenv("INPUT_FUNCTION_FOLDER")
-FUNCTION_PATH = os.getenv("INPUT_FUNCTION_PATH")
 
 # Input used for deploying using a configuration file
 FUNCTION_NAME = os.getenv("INPUT_FUNCTION_NAME", "")
@@ -45,12 +45,7 @@ def handle_config_file():
 
     config = get_config(config_file_path, FUNCTION_NAME)
 
-    if FUNCTION_NAME not in config.functions:
-        raise ValueError(f"Could not find function named {FUNCTION_NAME} in configuration file")
-
-    function_config = config.functions[FUNCTION_NAME]
-
-    for tenant in function_config.tenants:
+    for tenant in config.tenants:
         client = CogniteClient(
             api_key=os.getenv(tenant.deployment_key_name),
             project=tenant.cdf_project,
@@ -59,27 +54,28 @@ def handle_config_file():
         )
         function = call_deploy(
             client,
-            config.function_folder,
-            function_config.path,
+            config.folder_path,
+            config.file,
             os.getenv(tenant.function_key_name),
         )
 
-        if function:
-            deploy_schedule(
-                client,
-                function,
-                function_config.schedule.name,
-                function_config.schedule.cron,
-            )
+        if function and config.schedules:
+            for schedule in config.schedules:
+                deploy_schedule(
+                    client,
+                    function,
+                    schedule.name,
+                    schedule.cron,
+                )
 
 
 def handle_single_function():
     if not (
-        CDF_PROJECT and CDF_DEPLOYMENT_CREDENTIALS and FUNCTION_FOLDER and FUNCTION_PATH and CDF_FUNCTION_CREDENTIALS
+        CDF_PROJECT and CDF_DEPLOYMENT_CREDENTIALS and FUNCTION_FOLDER and FUNCTION_FILE and CDF_FUNCTION_CREDENTIALS
     ):
         raise MissingInput(
             "Missing one of inputs cdf_project, cdf_deployment_credentials, "
-            "function_folder, function_path, function_credentials"
+            "function_folder, function_file, function_credentials"
         )
 
     client = CogniteClient(
@@ -88,7 +84,7 @@ def handle_single_function():
         base_url=CDF_BASE_URL,
         client_name="deploy-function-action",
     )
-    call_deploy(client, FUNCTION_FOLDER, FUNCTION_PATH, CDF_FUNCTION_CREDENTIALS)
+    call_deploy(client, FUNCTION_FOLDER, FUNCTION_FILE, CDF_FUNCTION_CREDENTIALS)
 
 
 def call_deploy(client: CogniteClient, function_folder, function_path, api_key) -> Function:

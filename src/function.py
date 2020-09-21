@@ -13,6 +13,10 @@ class FunctionDeployTimeout(Exception):
     pass
 
 
+class FunctionDeployError(Exception):
+    pass
+
+
 def zip_and_upload_folder(client: CogniteClient, folder: Path, file_name: str) -> int:
     print(f"Uploading code from {folder} to {file_name}")
     with TemporaryDirectory() as tmpdir:
@@ -30,8 +34,8 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
         if function.status == "Ready":
             return True
         if function.status == "Failed":
-            return False
-        time.sleep(5.0)
+            raise FunctionDeployError(function.error["trace"])
+        time.sleep(3.0)
 
     return False
 
@@ -82,15 +86,20 @@ def create_and_wait(
 
 
 def upload_and_create(client: CogniteClient, name: str, folder: Path, function_path: Path, api_key: str) -> Function:
-    file_id = zip_and_upload_folder(client, folder, get_file_name(name))
-    return create_and_wait(
-        client,
-        name,
-        external_id=name,
-        function_path=function_path,
-        file_id=file_id,
-        api_key=api_key,
-    )
+    file_name = get_file_name(name)
+    file_id = zip_and_upload_folder(client, folder, file_name)
+    try:
+        return create_and_wait(
+            client,
+            name,
+            external_id=name,
+            function_path=function_path,
+            file_id=file_id,
+            api_key=api_key,
+        )
+    except (FunctionDeployError, FunctionDeployTimeout) as e:
+        try_delete_function_file(client, file_name)
+        raise e
 
 
 def deploy_function(
@@ -121,7 +130,7 @@ def function_exist(client: CogniteClient, external_id: str) -> bool:
 
 
 def file_exists(client: CogniteClient, external_id: str) -> bool:
-    return bool(client.functions.retrieve(external_id=external_id))
+    return bool(client.files.retrieve(external_id=external_id))
 
 
 def get_function_name(function_folder: Path, function_path: Path, is_pr: bool) -> str:
