@@ -4,9 +4,9 @@ from pathlib import Path
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 
-from src.config import get_config
-from src.function import deploy_function
-from src.schedule import deploy_schedule
+from config import get_config
+from function import deploy_function
+from schedule import deploy_schedule
 
 
 class MissingInput(Exception):
