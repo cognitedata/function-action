@@ -27,13 +27,11 @@ base_path = Path(__file__).parent / "test_files"
         (base_path / "config6.yaml", contextlib.nullcontext()),  # Valid config
     ],
 )
-
 def test_read_config(file_path: Path, expectation, monkeypatch):
     monkeypatch.setenv("FUNCTION_KEY", "function_key")
     monkeypatch.setenv("DEPLOYMENT_KEY", "deployment_key")
     with expectation:
         read_config(file_path)
-
 
 
 def test_read_config_whitespace_cron(monkeypatch):
@@ -45,7 +43,6 @@ def test_read_config_whitespace_cron(monkeypatch):
 
 
 @patch("src.config.read_config")
-
 def test_get_config(read_config_mock):
     function_config = FunctionConfig(folder_path="", file=".py", tenants=[])
 
