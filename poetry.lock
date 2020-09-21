@@ -96,7 +96,7 @@ description = "Client library for Cognite Data Fusion (CDF)"
 name = "cognite-sdk"
 optional = false
 python-versions = ">=3.5"
-version = "2.4.2"
+version = "2.4.3"
 
 [package.dependencies]
 pandas = "*"
@@ -580,8 +580,8 @@ click = [
     {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
 ]
 cognite-sdk = [
-    {file = "cognite-sdk-2.4.2.tar.gz", hash = "sha256:6410cda9e5d14002f1241b301e955b4f149d4bf41ddfd6a7e3cc0aa1ab453444"},
-    {file = "cognite_sdk-2.4.2-py3-none-any.whl", hash = "sha256:a969f3bc66b5542453b6ed65c9dcb7e16ec8f025aa0abe47661bf22a8dcf420e"},
+    {file = "cognite-sdk-2.4.3.tar.gz", hash = "sha256:a34bae547088d22cf7d7b8a8bd04c6ed25c91097b2232957da0f45b495192c5a"},
+    {file = "cognite_sdk-2.4.3-py3-none-any.whl", hash = "sha256:c9029138c0dc03d84fb82fddd8572c065a0b79ffd2a75bc112706f7c6b990c99"},
 ]
 cognite-sdk-experimental = [
     {file = "cognite-sdk-experimental-0.19.0.tar.gz", hash = "sha256:a756721b6b3410a6fbffdbc1f4a5facb6a1d7d56b66e9590a13fe5f54934fadd"},

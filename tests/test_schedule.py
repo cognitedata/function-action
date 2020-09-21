@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, call, patch
 
+import pytest
 from cognite.experimental.data_classes.functions import FunctionSchedule
 
 from src.schedule import deploy_schedule

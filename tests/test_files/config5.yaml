@@ -1,10 +1,10 @@
-function_folder: "."
 functions:
   function1:
-    path: "some/path"
-    schedule:
-      cron: "* * * * *"
-      name: "Simple schedule"
+    folder_path: "path"
+    file: "file"
+    schedules:
+      - cron: "* * * * *"
+        name: "Simple schedule"
     tenants:
       - cdf_project: "my_tenant"
         deployment_key_name: "THIS KEY DOES NOT EXIST"

@@ -14,14 +14,14 @@ inputs:
     description: Base url of your cdf project.
     default: https://api.cognitedata.com
     required: false
-  function_path:
-    description: Path of function inside of the function folder.
+  function_file:
+    description: Name of function file inside function folder, for instance "handler.py".
     required: false
   function_folder:
     description: Path to the folder where source code for the function(s) is/are located.
     default: .
     required: false
-  file_path:
+  config_file_path:
     description: Path to configuration file. Only used when deployig using a configuration file.
     default: config.yaml
     required: false

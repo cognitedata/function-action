@@ -140,3 +140,6 @@ cython_debug/
 # IDEA generated
 .vscode
 .idea
+
+# Test function code
+test_functions

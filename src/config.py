@@ -1,11 +1,14 @@
 import os
-import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from crontab import CronSlices
 from pydantic import BaseModel, validator
 from ruamel.yaml import YAML
+
+
+class InvalidCronException(Exception):
+    pass
 
 
 class TenantConfig(BaseModel):
@@ -18,6 +21,7 @@ class TenantConfig(BaseModel):
     def key_exists(cls, key_name):
         if not os.getenv(key_name):
             raise ValueError(f"Environment variable named {key_name} not set")
+        return key_name
 
 
 class ScheduleConfig(BaseModel):
@@ -27,20 +31,26 @@ class ScheduleConfig(BaseModel):
     @validator("cron")
     def valid_cron(cls, v):
         if not CronSlices.is_valid(v):
-            raise ValueError(f"Invalid cron expression: '{v}'")
+            raise InvalidCronException(f"Invalid cron expression: '{v}'")
 
         return v.strip()
 
 
 class FunctionConfig(BaseModel):
-    path: str
-    schedule: Optional[ScheduleConfig]
+    folder_path: str
+    file: str
+    schedules: Optional[List[ScheduleConfig]]
     tenants: List[TenantConfig]
+
+    @validator("file")
+    def valid_file(cls, v):
+        if not v.endswith(".py"):
+            raise ValueError(f"Invalid file name, must end with '.py', but got '{v}'")
+        return v
 
 
 class Config(BaseModel):
     functions: Dict[str, FunctionConfig]
-    function_folder: str
 
 
 def read_config(file_path: Path) -> Config:
@@ -50,9 +60,6 @@ def read_config(file_path: Path) -> Config:
     return Config(**content)
 
 
-def get_config(file_path: Path, function_name: str = "") -> Config:
+def get_config(file_path: Path, function_name: str) -> FunctionConfig:
     config = read_config(file_path)
-    if function_name:
-        config["functions"] = {function_name: config["functions"][function_name]}
-
-    return config
+    return config.functions[function_name]
