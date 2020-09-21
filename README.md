@@ -24,13 +24,13 @@ with:
 
 `config.yaml`:
 ```yaml
-function_folder: "."
 functions:
   function1:
-    path: "function1"
-    schedule:
-      cron: "*/5 * * * *"
-      name: "Run every 5 minutes"
+    folder_path: "function1"
+    file: "handler.py"
+    schedules:
+      - cron: "*/5 * * * *"
+        name: "Run every 5 minutes"
     tenants:
       - cdf_project: "cognite"
         deployment_key_name: "COGNITE_DEPLOYMENT_CREDENTIALS"
@@ -44,7 +44,7 @@ functions:
 2. `cdf_deployment_credentials`: Name of Github secret that holds the API-key that shall be used to deploy the function
 3. `cdf_function_credentials`: Name of Github secret that holds the API-key that the function will use when running
 4. `cdf_base_url`: Base url of your CDF tenant, defaults to _https://api.cognitedata.com_
-5. `function_path`: Path of the function to deploy (relative to the value set for `function_folder`)
+5. `function_file`: Name of the main function python file (usually `handler.py`)
 6. `function_folder`: Parent folder of function code, defaults to `.` (i.e. the root of your repo)
 
 
@@ -56,6 +56,6 @@ with:
     cdf_project: cognite
     cdf_deployment_credentials: ${{ secret.COGNITE_DEPLOYMENT_CREDENTIALS }}
     cdf_function_credentials: ${{ secret.COGNITE_FUNCTION_CREDENTIALS }}
-    function_path: function1
+    function_file: function1
     function_folder: ./functions
 ```
