@@ -13,7 +13,7 @@ If you're using a configuration file you'll need to define the following argumen
 #### Example usage
 Workflow:
 ```yaml
-uses: cognitedata/function-action
+uses: cognitedata/function-action@v1
 env:
   COGNITE_DEPLOYMENTS_CREDENTIALS: ${{ secret.COGNITE_DEPLOYMENT_CREDENTIALS }}
   COGNITE_FUNCTION_CREDENTIALS: ${{ secret.COGNITE_FUNCTION_CREDENTIALS }}
@@ -51,7 +51,7 @@ functions:
 #### Example usage
 Workflow:
 ```yaml
-uses: cognitedata/function-action
+uses: cognitedata/function-action@v1
 with:
     cdf_project: cognite
     cdf_deployment_credentials: ${{ secret.COGNITE_DEPLOYMENT_CREDENTIALS }}
