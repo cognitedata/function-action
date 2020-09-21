@@ -21,7 +21,7 @@ inputs:
     description: Path to the folder where source code for the function(s) is/are located.
     default: .
     required: false
-  file_path:
+  config_file_path:
     description: Path to configuration file. Only used when deployig using a configuration file.
     default: config.yaml
     required: false
