@@ -112,7 +112,7 @@ def deploy_function(
 
     folder_path = Path(function_folder)
     function_path = Path(function_path)
-    function_name = get_function_name(folder_path, function_path, is_pr)
+    function_name = get_function_name(folder_path, is_pr)
     try_delete(client, function_name)  # Delete old function and file
 
     if is_pr and os.getenv("DELETE_PR_FUNCTION"):
@@ -133,10 +133,10 @@ def file_exists(client: CogniteClient, external_id: str) -> bool:
     return bool(client.files.retrieve(external_id=external_id))
 
 
-def get_function_name(function_folder: Path, function_path: Path, is_pr: bool) -> str:
+def get_function_name(function_folder: Path, is_pr: bool) -> str:
     github_repo = os.environ["GITHUB_REPOSITORY"]
     github_head_ref = os.environ["GITHUB_HEAD_REF"]
-    full_path = Path(github_repo) / f"{'' if function_folder == '.' else function_folder}" / function_path
+    full_path = Path(github_repo) / f"{'' if function_folder == '.' else function_folder}"
     name = f"{full_path}{f'/{github_head_ref}' if is_pr else ':latest'}"
 
     return name

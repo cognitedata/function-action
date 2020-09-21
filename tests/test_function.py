@@ -243,11 +243,10 @@ def test_get_function_name(is_pr, expected_name_postfix, monkeypatch):
     monkeypatch.setenv("GITHUB_REPOSITORY", "test_repo")
     monkeypatch.setenv("GITHUB_HEAD_REF", "head_ref")
 
-    expected_name_prefix = "test_repo/f1/f2/my_handler.py"
-    function_folder = Path("f1")
-    function_path = Path("f2/my_handler.py")
+    expected_name_prefix = "test_repo/f1/my_function"
+    function_folder = Path("f1/my_function")
 
-    assert get_function_name(function_folder, function_path, is_pr) == f"{expected_name_prefix}{expected_name_postfix}"
+    assert get_function_name(function_folder, is_pr) == f"{expected_name_prefix}{expected_name_postfix}"
 
 
 @pytest.mark.parametrize(
