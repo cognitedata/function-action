@@ -108,7 +108,7 @@ def deploy_function(
     function_path: str,
     api_key: str,
     is_pr: bool = False,
-        is_delete: bool = False
+    is_delete: bool = False,
 ) -> Optional[Function]:
 
     folder_path = Path(function_folder)
