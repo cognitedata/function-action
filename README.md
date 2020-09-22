@@ -8,7 +8,7 @@ There are 2 ways to use this action:
 ### Configuration file
 If you're using a configuration file you'll need to define the following arguments in your Github workflow:
 1. `function_name`: Name of the function to deploy. This value must match a value in your configuration file.
-2. `file_path`: Path to your configuration file.
+2. `config_file_path`: Path to your configuration file.
 
 #### Example usage to deploy
 Workflow:
