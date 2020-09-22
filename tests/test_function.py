@@ -221,7 +221,7 @@ def test_deploy_function_delete(
     monkeypatch.setenv("DELETE_PR_FUNCTION", "True")
     get_function_name_mock.return_value = function_name
 
-    assert deploy_function(cognite_client_mock, "", "some_path/handler.py", "", True) is None
+    assert deploy_function(cognite_client_mock, "", "some_path/handler.py", "", True, True) is None
     assert try_delete_mock.call_args_list == [call(cognite_client_mock, function_name)]
     assert upload_and_create_mock.call_args_list == []
 
