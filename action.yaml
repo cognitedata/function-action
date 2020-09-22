@@ -23,7 +23,6 @@ inputs:
     required: false
   config_file_path:
     description: Path to configuration file. Only used when deployig using a configuration file.
-    default: config.yaml
     required: false
   function_name:
     description: Name of function. Only used when deployig using a configuration file.

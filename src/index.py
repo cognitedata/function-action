@@ -100,9 +100,6 @@ def call_deploy(client: CogniteClient, function_folder, function_path, api_key) 
 
 
 if CONFIG_FILE_PATH:
-    print("Before")
-    print(CONFIG_FILE_PATH)
-    print("After")
     handle_config_file()
 else:
     handle_single_function()
