@@ -27,7 +27,7 @@ FUNCTION_FOLDER = os.getenv("INPUT_FUNCTION_FOLDER")
 
 # Input used for deploying using a configuration file
 FUNCTION_NAME = os.getenv("INPUT_FUNCTION_NAME", "")
-CONFIG_FILE_PATH = os.getenv("INPUT_CONFIG_FILE_PATH")
+CONFIG_FILE_PATH = os.getenv("INPUT_CONFIG_FILE_PATH", "")
 
 GITHUB_EVENT_NAME = os.environ["GITHUB_EVENT_NAME"]
 GITHUB_REF = os.environ["GITHUB_REF"]
