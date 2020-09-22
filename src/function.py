@@ -108,6 +108,7 @@ def deploy_function(
     function_path: str,
     api_key: str,
     is_pr: bool = False,
+    is_delete: bool = False,
 ) -> Optional[Function]:
 
     folder_path = Path(function_folder)
@@ -115,7 +116,7 @@ def deploy_function(
     function_name = get_function_name(folder_path, is_pr)
     try_delete(client, function_name)  # Delete old function and file
 
-    if is_pr and os.getenv("DELETE_PR_FUNCTION"):
+    if is_pr and is_delete:
         return
 
     # Upload file and create function

@@ -31,6 +31,9 @@ CONFIG_FILE_PATH = os.getenv("INPUT_CONFIG_FILE_PATH")
 
 GITHUB_EVENT_NAME = os.environ["GITHUB_EVENT_NAME"]
 GITHUB_REF = os.environ["GITHUB_REF"]
+IS_DELETE = os.getenv("DELETE_PR_FUNCTION")
+IS_PR = GITHUB_EVENT_NAME == "pull_request"
+IS_PUSH = GITHUB_EVENT_NAME == "push"
 
 
 print(f"Handling event {GITHUB_EVENT_NAME} on {GITHUB_REF}")
@@ -59,7 +62,7 @@ def handle_config_file():
             os.getenv(tenant.function_key_name),
         )
 
-        if function and config.schedules:
+        if not IS_PR and function and config.schedules:
             for schedule in config.schedules:
                 deploy_schedule(
                     client,
@@ -90,10 +93,10 @@ def handle_single_function():
 def call_deploy(client: CogniteClient, function_folder, function_path, api_key) -> Function:
     user = client.login.status()
     assert user.logged_in
-    if GITHUB_EVENT_NAME == "push":
-        return deploy_function(client, function_folder, function_path, api_key)
-    elif GITHUB_EVENT_NAME == "pull_request":
-        return deploy_function(client, function_folder, function_path, api_key, is_pr=True)
+    if IS_PUSH:
+        return deploy_function(client, function_folder, function_path, api_key, is_delete=IS_DELETE)
+    elif IS_PR:
+        return deploy_function(client, function_folder, function_path, api_key, is_pr=True, is_delete=IS_DELETE)
 
 
 if CONFIG_FILE_PATH:
