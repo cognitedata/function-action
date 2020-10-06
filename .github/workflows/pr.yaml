@@ -35,5 +35,5 @@ jobs:
 
     - name: Run tests
       run: |
-        poetry run pytest -v --cov-report xml:coverage.xml --cov=src
+        PYTHONPATH=src poetry run pytest -v --cov-report xml:coverage.xml --cov=src
         coverage xml

@@ -6,7 +6,7 @@ authors = ["Magnus Moan <magnus.moan@cognite.com>"]
 
 [tool.black]
 line-length = 120
-target_version = ['py38']
+target_version = ['py37']
 include = '\.py$'
 
 [tool.isort]
@@ -16,11 +16,11 @@ include_trailing_comma=true    # corresponds to -tc flag
 skip_glob = '^((?!py$).)*$'    # this makes sort all Python files
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 cognite-sdk-experimental = "0.19.0"
 pydantic = "1.6.1"
 python-crontab = "2.5.1"
-"ruamel.yaml" = "0.16.10"
+PyYAML = "5.3.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "1.6.2"

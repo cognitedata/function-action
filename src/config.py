@@ -1,10 +1,9 @@
 import os
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
+from cognite.client import CogniteClient
 from crontab import CronSlices
-from pydantic import BaseModel, validator
-from ruamel.yaml import YAML
+from pydantic import BaseModel, root_validator, validator
 
 
 class InvalidCronException(Exception):
@@ -12,16 +11,52 @@ class InvalidCronException(Exception):
 
 
 class TenantConfig(BaseModel):
-    cdf_project: str
+    cdf_project: Optional[str]
     deployment_key_name: str
-    function_key_name: str
-    cdf_base_url: Optional[str]
+    runtime_key_name: str
+    cdf_base_url: str
 
-    @validator("deployment_key_name", "function_key_name")
+    @validator("deployment_key_name", "runtime_key_name")
     def key_exists(cls, key_name):
         if not os.getenv(key_name):
             raise ValueError(f"Environment variable named {key_name} not set")
         return key_name
+
+    @root_validator()
+    def check_credentials(cls, values):
+        project = values.get("cdf_project")
+        if project is not None:
+            deployment_client = CogniteClient(
+                api_key=os.getenv(values.get("deployment_key_name")),
+                base_url=values.get("cdf_base_url"),
+                client_name="function-action-validator",
+            )
+            if not deployment_client.login.status().logged_in:
+                raise ValueError("Can't login with deployment credentials")
+
+            if deployment_client.login.status().project != project:
+                raise ValueError(f"Provided deployment credentials doesn't match the project defined: {project}")
+
+            runtime_client = CogniteClient(
+                api_key=os.getenv(values.get("runtime_key_name")),
+                base_url=values.get("cdf_base_url"),
+                client_name="function-action-validator",
+            )
+            if not runtime_client.login.status().logged_in:
+                raise ValueError("Can't login with runtime credentials")
+
+            if runtime_client.login.status().project != project:
+                raise ValueError(f"Provided runtime credentials doesn't match the project defined: {project}")
+
+        return values
+
+    @property
+    def runtime_key(self):
+        return os.getenv(self.runtime_key_name)
+
+    @property
+    def deployment_key(self):
+        return os.getenv(self.deployment_key_name)
 
 
 class ScheduleConfig(BaseModel):
@@ -29,37 +64,23 @@ class ScheduleConfig(BaseModel):
     name: str
 
     @validator("cron")
-    def valid_cron(cls, v):
-        if not CronSlices.is_valid(v):
-            raise InvalidCronException(f"Invalid cron expression: '{v}'")
+    def valid_cron(cls, value):
+        if not CronSlices.is_valid(value):
+            raise InvalidCronException(f"Invalid cron expression: '{value}'")
 
-        return v.strip()
+        return value.strip()
 
 
 class FunctionConfig(BaseModel):
+    external_id: str
     folder_path: str
     file: str
-    schedules: Optional[List[ScheduleConfig]]
-    tenants: List[TenantConfig]
+    schedules: List[ScheduleConfig]
+    tenant: TenantConfig
+    remove_only: bool
 
     @validator("file")
-    def valid_file(cls, v):
-        if not v.endswith(".py"):
-            raise ValueError(f"Invalid file name, must end with '.py', but got '{v}'")
-        return v
-
-
-class Config(BaseModel):
-    functions: Dict[str, FunctionConfig]
-
-
-def read_config(file_path: Path) -> Config:
-    content = YAML(typ="safe").load(file_path.open().read())
-    if not content:
-        raise ValueError(f"Expected to find content in file {file_path}, but was empty")
-    return Config(**content)
-
-
-def get_config(file_path: Path, function_name: str) -> FunctionConfig:
-    config = read_config(file_path)
-    return config.functions[function_name]
+    def valid_file(cls, value):
+        if not value.endswith(".py"):
+            raise ValueError(f"Invalid file name, must end with '.py', but got '{value}'")
+        return value

@@ -1,14 +1,20 @@
 name: Function Action
-description: Deploy a Cognite Function with schedule
+description: [re]deploy a Cognite Function with schedules
 inputs:
-  cdf_project:
-    description: The name of your cdf project.
-    required: false
+  function_name:
+    description: Name of function. Used as an external_id for created function. Should be unique within cdf project.
+    required: true
+  function_folder:
+    description: Path to the folder where source code for the function(s) is/are located.
+    required: true
   cdf_deployment_credentials:
     description: CDF API key that's provided to the deployed function.
-    required: false
-  cdf_function_credentials:
-    description: CDF API key that's used for deployment.
+    required: true
+  cdf_runtime_credentials:
+    description: CDF API key that will be used when function is running.
+    required: true
+  cdf_project:
+    description: The external_id of your cdf project. Will be checked that it matches required credentials.
     required: false
   cdf_base_url:
     description: Base url of your cdf project.
@@ -16,20 +22,19 @@ inputs:
     required: false
   function_file:
     description: Name of function file inside function folder, for instance "handler.py".
+    default: handler.py
     required: false
-  function_folder:
-    description: Path to the folder where source code for the function(s) is/are located.
-    default: .
+  schedules:
+    description: List of schedules to trigger the function. for instance "['0 */5 * * *', '*/15 0 * * *']"
     required: false
-  config_file_path:
-    description: Path to configuration file. Only used when deployig using a configuration file.
-    required: false
-  function_name:
-    description: Name of function. Only used when deployig using a configuration file.
+    default: '[]'
+  remove_only:
+    description: Remove all artifacts and don't create new ones.
+    default: false
     required: false
 outputs:
-  functionId: # id of output
-    description: The ID of the function output. Use this to do calls against the API!
+  function_external_id: # id of output
+    description: The External ID of the function output. Use this to do calls against the API!
 runs:
-  using: "docker"
+  using: docker
   image: Dockerfile

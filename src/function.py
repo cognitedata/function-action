@@ -5,8 +5,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
 
+from cognite.client.data_classes import FileMetadata
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
+
+from config import FunctionConfig
 
 
 class FunctionDeployTimeout(Exception):
@@ -22,34 +25,47 @@ def zip_and_upload_folder(client: CogniteClient, folder: Path, file_name: str) -
     with TemporaryDirectory() as tmpdir:
         zip_path = Path(tmpdir) / "function"
         shutil.make_archive(str(zip_path), "zip", str(folder))
-        file = client.files.upload(f"{zip_path}.zip", name=file_name, external_id=file_name, overwrite=True)
+        file: FileMetadata = client.files.upload(
+            f"{zip_path}.zip", name=file_name, external_id=file_name, overwrite=True
+        )
         print(f"Upload complete.")
-        return file.id
+        if file.id is not None:
+            return file.id
+    raise FunctionDeployError("Failed to upload file to Cognite Data Fusion")
 
 
 def await_function_deployment(client: CogniteClient, external_id: str, wait_time_seconds: int):
     t_end = time.time() + wait_time_seconds
     while time.time() < t_end:
-        function = client.functions.retrieve(external_id=external_id)
-        if function.status == "Ready":
-            return True
-        if function.status == "Failed":
-            raise FunctionDeployError(function.error["trace"])
+        function: Optional[Function] = client.functions.retrieve(external_id=external_id)
+        if function is not None:
+            if function.status == "Ready":
+                return True
+            if function.status == "Failed":
+                raise FunctionDeployError(function.error["trace"])
         time.sleep(3.0)
 
     return False
 
 
-def try_delete(client: CogniteClient, name: str):
-    try_delete_function(client, name)
-    try_delete_function_file(client, get_file_name(name))
+def try_delete(client: CogniteClient, external_id: str):
+    try_delete_function(client, external_id)
+    try_delete_function_file(client, get_file_name(external_id))
 
 
 def try_delete_function(client: CogniteClient, external_id: str):
-    if function_exist(client, external_id):
-        print(f"Found existing function {external_id}. Deleting ...")
-        client.functions.delete(external_id=external_id)
-        print(f"Did delete function {external_id}.")
+    if function_exist(client, external_id):  # I don't want to deal with mocks for now :(
+        func = client.functions.retrieve(external_id=external_id)
+        if func is not None:
+            for schedule in func.list_schedules():
+                # we want to delete All schedules since we don't keep state anywhere
+                # 1. those we are going to recreate
+                # 2. those removed permanently
+                client.functions.schedules.delete(schedule.id)
+
+            print(f"Found existing function {external_id}. Deleting ...")
+            client.functions.delete(external_id=external_id)
+            print(f"Did delete function {external_id}.")
 
 
 def try_delete_function_file(client: CogniteClient, external_id: str):
@@ -63,17 +79,17 @@ def create_and_wait(
     client: CogniteClient,
     name: str,
     external_id: str,
-    function_path: Path,
+    function_path: str,
     file_id: int,
     api_key: str,
 ):
-    print(f"Will create function {external_id}. With api key: {api_key is not None}")
-    function = client.functions.create(
+    print(f"Will create function {external_id}")
+    function: Function = client.functions.create(
         name=name,
         external_id=external_id,
         file_id=file_id,
         api_key=api_key,
-        function_path=str(function_path),
+        function_path=function_path,
     )
     print(f"Created function {external_id}. Waiting for deployment ...")
     wait_time_seconds = 600  # 10 minutes
@@ -85,43 +101,31 @@ def create_and_wait(
     return function
 
 
-def upload_and_create(client: CogniteClient, name: str, folder: Path, function_path: Path, api_key: str) -> Function:
-    file_name = get_file_name(name)
-    file_id = zip_and_upload_folder(client, folder, file_name)
+def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
+    zip_file_name = get_file_name(config.external_id)
+    file_id = zip_and_upload_folder(client, Path(config.folder_path), zip_file_name)
     try:
         return create_and_wait(
             client,
-            name,
-            external_id=name,
-            function_path=function_path,
+            config.external_id,
+            external_id=config.external_id,
+            function_path=config.file,
             file_id=file_id,
-            api_key=api_key,
+            api_key=config.tenant.runtime_key,
         )
     except (FunctionDeployError, FunctionDeployTimeout) as e:
-        try_delete_function_file(client, file_name)
+        try_delete_function_file(client, zip_file_name)
         raise e
 
 
-def deploy_function(
-    client: CogniteClient,
-    function_folder: str,
-    function_path: str,
-    api_key: str,
-    is_pr: bool = False,
-    is_delete: bool = False,
-) -> Optional[Function]:
+def deploy_function(client: CogniteClient, config: FunctionConfig) -> Optional[Function]:
+    try_delete(client, config.external_id)  # Delete old function and file
 
-    folder_path = Path(function_folder)
-    function_path = Path(function_path)
-    function_name = get_function_name(folder_path, is_pr)
-    try_delete(client, function_name)  # Delete old function and file
-
-    if is_pr and is_delete:
-        return
-
-    # Upload file and create function
-    function = upload_and_create(client, function_name, folder_path, function_path, api_key)
-    print(f"Successfully created and deployed function {function_name} with id {function.id}")
+    function = None
+    if not config.remove_only:
+        # Upload file and create function
+        function = upload_and_create(client, config)
+        print(f"Successfully created and deployed function {config.external_id} with id {function.id}")
 
     return function
 

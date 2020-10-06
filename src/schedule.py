@@ -1,19 +1,22 @@
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 
+from config import FunctionConfig
 
-def deploy_schedule(client: CogniteClient, function: Function, schedule_name: str, cron: str):
+
+def deploy_schedule(client: CogniteClient, function: Function, config: FunctionConfig):
     schedules = function.list_schedules()
 
     for schedule in schedules:
-        if schedule.name == schedule_name:
-            client.functions.schedules.delete(schedule.id)
-            break
+        # we want to delete All schedules since we don't keep state anywhere and we want to wipe
+        # 1. those we are going to recreate
+        # 2. those removed permanently
+        client.functions.schedules.delete(schedule.id)
 
-    client.functions.schedules.create(
-        function_external_id=function.external_id,
-        cron_expression=cron,
-        name=schedule_name,
-    )
-
-    print(f"Successfully deployed schedule {schedule_name} with cron expression {cron}.")
+    for schedule in config.schedules:
+        client.functions.schedules.create(
+            function_external_id=function.external_id,
+            cron_expression=schedule.cron,
+            name=schedule.name,
+        )
+        print(f"Successfully deployed schedule {schedule.name} with cron expression {schedule.cron}.")
