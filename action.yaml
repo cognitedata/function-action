@@ -16,6 +16,7 @@ inputs:
   cdf_project:
     description: The external_id of your cdf project. Will be checked that it matches required credentials.
     required: false
+    default: None
   cdf_base_url:
     description: Base url of your cdf project.
     default: https://api.cognitedata.com
