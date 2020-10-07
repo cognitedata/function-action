@@ -21,6 +21,5 @@ RUN pip3 install --target=/app -r /requirements.txt --upgrade
 # https://github.com/GoogleContainerTools/distroless
 FROM gcr.io/distroless/python3-debian10
 COPY --from=builder /app /app
-WORKDIR /app
 ENV PYTHONPATH /app
-CMD ["index.py"]
+CMD ["/app/index.py"]
