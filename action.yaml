@@ -7,8 +7,8 @@ inputs:
   function_folder:
     description: Path to the folder where source code for the function(s) is/are located.
     required: true
-  cdf_placement_credentials:
-    description: CDF API key that's provided to the deployed function.
+  cdf_deployment_credentials:
+    description: CDF API key that is provided to the deployed function.
     required: true
   cdf_runtime_credentials:
     description: CDF API key that will be used when function is running.
@@ -21,15 +21,15 @@ inputs:
     default: https://api.cognitedata.com
     required: false
   function_file:
-    description: Name of function file inside function folder, for instance "handler.py".
+    description: Name of function file inside function folder, for instance, handler.py.
     default: handler.py
     required: false
   schedule_file:
-    description: Relative path and name from 'function_folder' of the file with schedules to be applied.
+    description: Relative path and name from (function_folder) of the file with schedules to be applied.
     required: false
     default: None
   remove_only:
-    description: Remove all artifacts and don't create new ones.
+    description: Remove all artifacts and do not create new ones.
     default: false
     required: false
 outputs:

@@ -40,7 +40,7 @@ if __name__ == "__main__":
             file=os.getenv("INPUT_FUNCTION_FILE", "handler.py"),
             tenant=TenantConfig(
                 cdf_project=os.getenv("INPUT_CDF_PROJECT"),
-                deployment_key=os.getenv("INPUT_CDF_PLACEMENT_CREDENTIALS", ""),
+                deployment_key=os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS", ""),
                 runtime_key=os.getenv("INPUT_CDF_RUNTIME_CREDENTIALS", ""),
                 cdf_base_url=os.getenv("INPUT_CDF_BASE_URL", ""),
             ),
