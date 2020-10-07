@@ -14,22 +14,16 @@ class InvalidCronException(Exception):
 
 class TenantConfig(BaseModel):
     cdf_project: Optional[str]
-    deployment_key_name: str
-    runtime_key_name: str
+    deployment_key: str
+    runtime_key: str
     cdf_base_url: str
-
-    @validator("deployment_key_name", "runtime_key_name")
-    def key_exists(cls, key_name):
-        if not os.getenv(key_name):
-            raise ValueError(f"Environment variable named {key_name} not set")
-        return key_name
 
     @root_validator()
     def check_credentials(cls, values):
         project = values.get("cdf_project")
         if project is not None:
             deployment_client = CogniteClient(
-                api_key=os.getenv(values.get("deployment_key_name")),
+                api_key=values.get("deployment_key"),
                 base_url=values.get("cdf_base_url"),
                 client_name="function-action-validator",
             )
@@ -40,7 +34,7 @@ class TenantConfig(BaseModel):
                 raise ValueError(f"Provided deployment credentials doesn't match the project defined: {project}")
 
             runtime_client = CogniteClient(
-                api_key=os.getenv(values.get("runtime_key_name")),
+                api_key=values.get("runtime_key"),
                 base_url=values.get("cdf_base_url"),
                 client_name="function-action-validator",
             )
@@ -51,14 +45,6 @@ class TenantConfig(BaseModel):
                 raise ValueError(f"Provided runtime credentials doesn't match the project defined: {project}")
 
         return values
-
-    @property
-    def runtime_key(self):
-        return os.getenv(self.runtime_key_name)
-
-    @property
-    def deployment_key(self):
-        return os.getenv(self.deployment_key_name)
 
 
 class ScheduleConfig(BaseModel):

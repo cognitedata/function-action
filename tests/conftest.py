@@ -48,8 +48,8 @@ def valid_config(monkeypatch, loggedin_status):
             file="handler.py",
             tenant=TenantConfig(
                 cdf_project="mock",
-                deployment_key_name="DEPLOYMENT_KEY",
-                runtime_key_name="FUNCTION_KEY",
+                deployment_key="DEPLOYMENT_KEY",
+                runtime_key="FUNCTION_KEY",
                 cdf_base_url="https://api.cognitedata.com",
             ),
             schedule_file="configs/valid_schedule.yml",
