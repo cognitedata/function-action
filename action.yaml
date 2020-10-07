@@ -1,5 +1,5 @@
 name: Function Action
-description: [re]deploy a Cognite Function with schedules
+description: (re)deploy a Cognite Function with schedules
 inputs:
   function_name:
     description: Name of function. Used as an external_id for created function. Should be unique within cdf project.
