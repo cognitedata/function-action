@@ -17,6 +17,12 @@ class TenantConfig(BaseModel):
     runtime_key: str
     cdf_base_url: str
 
+    @validator("cdf_project", pre=True)
+    def valid_project(cls, value):
+        if value is not None and value == "":
+            raise ValueError("CDF project should not be empty.")
+        return value
+
     @validator("deployment_key", pre=True)
     def valid_deployment_key(cls, value):
         if value is None:
