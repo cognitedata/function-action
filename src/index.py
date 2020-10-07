@@ -44,13 +44,7 @@ if __name__ == "__main__":
                 runtime_key_name=os.getenv("INPUT_CDF_RUNTIME_CREDENTIALS", ""),
                 cdf_base_url=os.getenv("INPUT_CDF_BASE_URL", ""),
             ),
-            schedules=[
-                ScheduleConfig(
-                    name=f"Schedule for {ext_id} #{i}",
-                    cron=s,
-                )
-                for i, s in enumerate(schedules)
-            ],
+            schedule_file=os.getenv("INPUT_SCHEDULE_FILE", None),
             remove_only=os.getenv("INPUT_REMOVE_ONLY"),
         )
     )
