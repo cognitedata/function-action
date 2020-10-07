@@ -18,7 +18,7 @@ class TenantConfig(BaseModel):
     cdf_base_url: str
 
     @validator("deployment_key")
-    def valid_schedule_file(cls, value):
+    def valid_deployment_key(cls, value):
         if value is None:
             raise ValueError("Missing deployment key.'")
         if value is not None and value == "":
@@ -26,7 +26,7 @@ class TenantConfig(BaseModel):
         return value
 
     @validator("runtime_key")
-    def valid_schedule_file(cls, value):
+    def valid_runtime_key(cls, value):
         if value is None:
             raise ValueError("Missing runtime key.'")
         if value is not None and value == "":
