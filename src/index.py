@@ -12,7 +12,7 @@ from schedule import deploy_schedule
 
 def main(config: FunctionConfig) -> Optional[Function]:
     client = CogniteClient(
-        api_key=config.tenant.deployment_key_name,
+        api_key=config.tenant.deployment_key,
         project=config.tenant.cdf_project,
         base_url=config.tenant.cdf_base_url,
         client_name="function-action",
