@@ -14,7 +14,7 @@ inputs:
     description: CDF API key that will be used when function is running.
     required: true
   cdf_project:
-    description: The external_id of your cdf project. Will be checked that it matches required credentials.
+    description: The name of your cdf project. Will be checked that it matches required credentials.
     required: false
     default: ""
   cdf_base_url:
