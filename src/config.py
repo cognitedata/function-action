@@ -17,7 +17,7 @@ class TenantConfig(BaseModel):
     runtime_key: str
     cdf_base_url: str
 
-    @validator("deployment_key")
+    @validator("deployment_key", pre=True)
     def valid_deployment_key(cls, value):
         if value is None:
             raise ValueError("Missing deployment key.'")
@@ -25,7 +25,7 @@ class TenantConfig(BaseModel):
             raise ValueError("Deployment key should not be empty.")
         return value
 
-    @validator("runtime_key")
+    @validator("runtime_key", pre=True)
     def valid_runtime_key(cls, value):
         if value is None:
             raise ValueError("Missing runtime key.'")
