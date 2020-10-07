@@ -16,7 +16,7 @@ inputs:
   cdf_project:
     description: The external_id of your cdf project. Will be checked that it matches required credentials.
     required: false
-    default: None
+    default: ""
   cdf_base_url:
     description: Base url of your cdf project.
     default: https://api.cognitedata.com
@@ -28,7 +28,7 @@ inputs:
   schedule_file:
     description: Relative path and name from (function_folder) of the file with schedules to be applied.
     required: false
-    default: None
+    default: ""
   remove_only:
     description: Remove all artifacts and do not create new ones.
     default: false

@@ -33,18 +33,20 @@ if __name__ == "__main__":
 
     schedules: List[str] = yaml.safe_load(os.getenv("INPUT_SCHEDULES", "[]"))
     ext_id = os.getenv("INPUT_FUNCTION_NAME", "")
+    schedule_file = os.getenv("INPUT_SCHEDULE_FILE", None)
+    cdf_project = os.getenv("INPUT_CDF_PROJECT", None)
     function = main(
         FunctionConfig(
             external_id=ext_id,
             folder_path=os.getenv("INPUT_FUNCTION_FOLDER", ""),
             file=os.getenv("INPUT_FUNCTION_FILE", "handler.py"),
             tenant=TenantConfig(
-                cdf_project=os.getenv("INPUT_CDF_PROJECT"),
+                cdf_project=cdf_project if cdf_project and cdf_project != "" else None,
                 deployment_key=os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS", ""),
                 runtime_key=os.getenv("INPUT_CDF_RUNTIME_CREDENTIALS", ""),
                 cdf_base_url=os.getenv("INPUT_CDF_BASE_URL", ""),
             ),
-            schedule_file=os.getenv("INPUT_SCHEDULE_FILE", None),
+            schedule_file=schedule_file if schedule_file and schedule_file != "" else None,
             remove_only=os.getenv("INPUT_REMOVE_ONLY"),
         )
     )
