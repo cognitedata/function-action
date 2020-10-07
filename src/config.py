@@ -106,11 +106,14 @@ class FunctionConfig(BaseModel):
 
     @property
     def schedules(self) -> List[ScheduleConfig]:
-        path = Path(self.folder_path + "/" + self.schedule_file)
-        collection: List[Dict] = yaml.safe_load(path.open(mode="r").read())
-        return [
-            ScheduleConfig(
-                cron=c.get("cron"), name=self.external_id + ":" + c.get("name", "undefined"), data=c.get("data", {})
-            )
-            for c in collection
-        ]
+        if self.schedule_file is not None:
+            path = Path(self.folder_path + "/" + self.schedule_file)
+            collection: List[Dict] = yaml.safe_load(path.open(mode="r").read())
+            return [
+                ScheduleConfig(
+                    cron=c.get("cron"), name=self.external_id + ":" + c.get("name", "undefined"), data=c.get("data", {})
+                )
+                for c in collection
+            ]
+
+        return []
