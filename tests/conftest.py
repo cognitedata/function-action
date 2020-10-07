@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
@@ -39,12 +40,11 @@ def loggedin_status():
 def valid_config(monkeypatch, loggedin_status):
     monkeypatch.setenv("FUNCTION_KEY", "FUNCTION_KEY")
     monkeypatch.setenv("DEPLOYMENT_KEY", "DEPLOYMENT_KEY")
-    schedules = ["* * * * *"]
     with monkeypatch_cognite_client() as cdf_mock:
         cdf_mock.login.status.return_value = loggedin_status
         return FunctionConfig(
             external_id="test:hello_world_function/function",
-            folder_path="hello_world_function",
+            folder_path="tests",
             file="handler.py",
             tenant=TenantConfig(
                 cdf_project="mock",
@@ -52,13 +52,7 @@ def valid_config(monkeypatch, loggedin_status):
                 runtime_key_name="FUNCTION_KEY",
                 cdf_base_url="https://api.cognitedata.com",
             ),
-            schedules=[
-                ScheduleConfig(
-                    name=f"Schedule for test:hello_world_function #{i}",
-                    cron=s,
-                )
-                for i, s in enumerate(schedules)
-            ],
+            schedule_file="configs/valid_schedule.yml",
             remove_only=False,
         )
 

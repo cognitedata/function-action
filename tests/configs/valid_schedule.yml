@@ -1,0 +1,6 @@
+- name: schedule_#1
+  cron: "* * * * *"
+  data:
+    test_value: 42
+    magic_string: "Hello world!"
+    magic_bool: True

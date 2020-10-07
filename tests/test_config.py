@@ -10,6 +10,7 @@ base_path = Path(__file__).parent / "test_files"
 
 def test_read_config_whitespace_cron(valid_config):
     assert valid_config.schedules[0].cron == "* * * * *"
+    assert valid_config.schedules[0].data.get("test_value") == 42
 
 
 def test_cross_project_config(monkeypatch, loggedin_status):

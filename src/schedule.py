@@ -18,5 +18,6 @@ def deploy_schedule(client: CogniteClient, function: Function, config: FunctionC
             function_external_id=function.external_id,
             cron_expression=schedule.cron,
             name=schedule.name,
+            data=schedule.data,
         )
         print(f"Successfully deployed schedule {schedule.name} with cron expression {schedule.cron}.")

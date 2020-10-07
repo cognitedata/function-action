@@ -24,10 +24,10 @@ inputs:
     description: Name of function file inside function folder, for instance "handler.py".
     default: handler.py
     required: false
-  schedules:
-    description: List of schedules to trigger the function. for instance "['0 */5 * * *', '*/15 0 * * *']"
+  schedule_file:
+    description: Relative path and name from 'function_folder' of the file with schedules to be applied.
     required: false
-    default: '[]'
+    default: None
   remove_only:
     description: Remove all artifacts and don't create new ones.
     default: false
