@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -17,6 +16,22 @@ class TenantConfig(BaseModel):
     deployment_key: str
     runtime_key: str
     cdf_base_url: str
+
+    @validator("deployment_key")
+    def valid_schedule_file(cls, value):
+        if value is None:
+            raise ValueError("Missing deployment key.'")
+        if value is not None and value == "":
+            raise ValueError("Deployment key should not be empty.")
+        return value
+
+    @validator("runtime_key")
+    def valid_schedule_file(cls, value):
+        if value is None:
+            raise ValueError("Missing runtime key.'")
+        if value is not None and value == "":
+            raise ValueError("Runtime key should not be empty.")
+        return value
 
     @root_validator()
     def check_credentials(cls, values):
