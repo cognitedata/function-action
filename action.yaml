@@ -7,7 +7,7 @@ inputs:
   function_folder:
     description: Path to the folder where source code for the function(s) is/are located.
     required: true
-  cdf_deployment_credentials:
+  cdf_placement_credentials:
     description: CDF API key that's provided to the deployed function.
     required: true
   cdf_runtime_credentials:
