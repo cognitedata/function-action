@@ -1,55 +1,41 @@
-import contextlib
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
-from pydantic import ValidationError
+from cognite.client.testing import monkeypatch_cognite_client
 
-from src.config import Config, FunctionConfig, InvalidCronException, get_config, read_config
+from config import FunctionConfig, ScheduleConfig, TenantConfig
 
 base_path = Path(__file__).parent / "test_files"
 
 
-@pytest.mark.parametrize(
-    "file_path, expectation",
-    [
-        (base_path / "config1.yaml", contextlib.nullcontext()),  # Valid config
-        (base_path / "config2.yaml", pytest.raises(ValueError)),  # Empty config
-        (
-            base_path / "config3.yaml",
-            pytest.raises(ValidationError),
-        ),  # Invalid config, missing fields
-        (base_path / "config4.yaml", pytest.raises(InvalidCronException)),  # Invalid cron
-        (
-            base_path / "config5.yaml",
-            pytest.raises(ValidationError),
-        ),  # Non existing keys
-        (base_path / "config6.yaml", contextlib.nullcontext()),  # Valid config
-    ],
-)
-def test_read_config(file_path: Path, expectation, monkeypatch):
-    monkeypatch.setenv("FUNCTION_KEY", "function_key")
-    monkeypatch.setenv("DEPLOYMENT_KEY", "deployment_key")
-    with expectation:
-        read_config(file_path)
+def test_read_config_whitespace_cron(valid_config):
+    assert valid_config.schedules[0].cron == "* * * * *"
+    assert valid_config.schedules[0].data.get("test_value") == 42
 
 
-def test_read_config_whitespace_cron(monkeypatch):
-    monkeypatch.setenv("FUNCTION_KEY", "function_key")
-    monkeypatch.setenv("DEPLOYMENT_KEY", "deployment_key")
-    config = read_config(base_path / "config7.yaml")
-
-    assert config.functions["function1"].schedules[0].cron == "* * * * *"
-
-
-@patch("src.config.read_config")
-def test_get_config(read_config_mock):
-    function_config = FunctionConfig(folder_path="", file=".py", tenants=[])
-
-    config = Config(functions={"function 1": function_config})
-
-    read_config_mock.return_value = config
-    assert get_config(Path(), "function 1") == function_config
-
-    with pytest.raises(KeyError):
-        get_config(Path(), "function 2")
+def test_cross_project_config(monkeypatch, loggedin_status):
+    monkeypatch.setenv("FUNCTION_KEY", "FUNCTION_KEY")
+    monkeypatch.setenv("DEPLOYMENT_KEY", "DEPLOYMENT_KEY")
+    schedules = ["* * * * *"]
+    with monkeypatch_cognite_client() as cdf_mock:
+        cdf_mock.login.status.return_value = loggedin_status
+        with pytest.raises(expected_exception=ValueError):
+            FunctionConfig(
+                external_id="test:hello_world_function",
+                folder_path="hello_world_function",
+                file="handler.py",
+                tenant=TenantConfig(
+                    cdf_project="demo",
+                    deployment_key="DEPLOYMENT_KEY",
+                    runtime_key="FUNCTION_KEY",
+                    cdf_base_url="https://api.cognitedata.com",
+                ),
+                schedules=[
+                    ScheduleConfig(
+                        name=f"Schedule for test:hello_world_function #{i}",
+                        cron=s,
+                    )
+                    for i, s in enumerate(schedules)
+                ],
+                remove_only=False,
+            )

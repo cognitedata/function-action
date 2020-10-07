@@ -1,105 +1,55 @@
 import os
-from pathlib import Path
+from typing import List, Optional
 
+import yaml
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 
-from config import get_config
+from config import FunctionConfig, ScheduleConfig, TenantConfig
 from function import deploy_function
 from schedule import deploy_schedule
 
 
-class MissingInput(Exception):
-    pass
-
-
-class MissingConfig(Exception):
-    pass
-
-
-# Input used for deploying function where all metadata is added directly in the Github workflow
-CDF_PROJECT = os.getenv("INPUT_CDF_PROJECT")
-CDF_DEPLOYMENT_CREDENTIALS = os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS")
-CDF_FUNCTION_CREDENTIALS = os.getenv("INPUT_CDF_FUNCTION_CREDENTIALS")
-CDF_BASE_URL = os.getenv("INPUT_CDF_BASE_URL")
-FUNCTION_FILE = os.getenv("INPUT_FUNCTION_FILE")
-FUNCTION_FOLDER = os.getenv("INPUT_FUNCTION_FOLDER")
-
-# Input used for deploying using a configuration file
-FUNCTION_NAME = os.getenv("INPUT_FUNCTION_NAME", "")
-CONFIG_FILE_PATH = os.getenv("INPUT_CONFIG_FILE_PATH", "")
-
-GITHUB_EVENT_NAME = os.environ["GITHUB_EVENT_NAME"]
-GITHUB_REF = os.environ["GITHUB_REF"]
-IS_DELETE = os.getenv("DELETE_PR_FUNCTION")
-IS_PR = GITHUB_EVENT_NAME == "pull_request"
-IS_PUSH = GITHUB_EVENT_NAME == "push"
-
-
-print(f"Handling event {GITHUB_EVENT_NAME} on {GITHUB_REF}")
-
-
-def handle_config_file():
-    if not FUNCTION_NAME:
-        raise MissingInput("Missing function_name input")
-    config_file_path = Path(CONFIG_FILE_PATH)
-    if not config_file_path.exists():
-        raise IOError(f"Could not find {config_file_path}")
-
-    config = get_config(config_file_path, FUNCTION_NAME)
-
-    for tenant in config.tenants:
-        client = CogniteClient(
-            api_key=os.getenv(tenant.deployment_key_name),
-            project=tenant.cdf_project,
-            base_url=tenant.cdf_base_url,
-            client_name="deploy-function-action",
-        )
-        function = call_deploy(
-            client,
-            config.folder_path,
-            config.file,
-            os.getenv(tenant.function_key_name),
-        )
-
-        if not IS_PR and function and config.schedules:
-            for schedule in config.schedules:
-                deploy_schedule(
-                    client,
-                    function,
-                    schedule.name,
-                    schedule.cron,
-                )
-
-
-def handle_single_function():
-    if not (
-        CDF_PROJECT and CDF_DEPLOYMENT_CREDENTIALS and FUNCTION_FOLDER and FUNCTION_FILE and CDF_FUNCTION_CREDENTIALS
-    ):
-        raise MissingInput(
-            "Missing one of inputs cdf_project, cdf_deployment_credentials, "
-            "function_folder, function_file, function_credentials"
-        )
-
+def main(config: FunctionConfig) -> Optional[Function]:
     client = CogniteClient(
-        api_key=CDF_DEPLOYMENT_CREDENTIALS,
-        project=CDF_PROJECT,
-        base_url=CDF_BASE_URL,
-        client_name="deploy-function-action",
+        api_key=config.tenant.deployment_key,
+        project=config.tenant.cdf_project,
+        base_url=config.tenant.cdf_base_url,
+        client_name="function-action",
     )
-    call_deploy(client, FUNCTION_FOLDER, FUNCTION_FILE, CDF_FUNCTION_CREDENTIALS)
+    f = deploy_function(client, config)
+
+    if f is not None:
+        deploy_schedule(client, f, config)
+
+    return f
 
 
-def call_deploy(client: CogniteClient, function_folder, function_path, api_key) -> Function:
-    user = client.login.status()
-    assert user.logged_in
-    if IS_PUSH:
-        return deploy_function(client, function_folder, function_path, api_key, is_delete=IS_DELETE)
-    elif IS_PR:
-        return deploy_function(client, function_folder, function_path, api_key, is_pr=True, is_delete=IS_DELETE)
+if __name__ == "__main__":
+    # Input used for deploying using a configuration file
 
+    GITHUB_EVENT_NAME = os.getenv("GITHUB_EVENT_NAME", "undefined")
+    GITHUB_REF = os.getenv("GITHUB_REF", "undefined")
 
-if CONFIG_FILE_PATH:
-    handle_config_file()
-else:
-    handle_single_function()
+    schedules: List[str] = yaml.safe_load(os.getenv("INPUT_SCHEDULES", "[]"))
+    ext_id = os.getenv("INPUT_FUNCTION_NAME", "")
+    schedule_file = os.getenv("INPUT_SCHEDULE_FILE", None)
+    cdf_project = os.getenv("INPUT_CDF_PROJECT", None)
+    function = main(
+        FunctionConfig(
+            external_id=ext_id,
+            folder_path=os.getenv("INPUT_FUNCTION_FOLDER", ""),
+            file=os.getenv("INPUT_FUNCTION_FILE", "handler.py"),
+            tenant=TenantConfig(
+                cdf_project=cdf_project if cdf_project and cdf_project != "" else None,
+                deployment_key=os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS", ""),
+                runtime_key=os.getenv("INPUT_CDF_RUNTIME_CREDENTIALS", ""),
+                cdf_base_url=os.getenv("INPUT_CDF_BASE_URL", ""),
+            ),
+            schedule_file=schedule_file if schedule_file and schedule_file != "" else None,
+            remove_only=os.getenv("INPUT_REMOVE_ONLY"),
+        )
+    )
+
+    if function is not None:
+        print(f"::set-output name=function_external_id::{function.external_id}")
