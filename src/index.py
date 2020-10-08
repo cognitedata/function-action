@@ -34,7 +34,7 @@ class GitHubLogHandler(logging.StreamHandler):
     def format(self, record):
         message = super(GitHubLogHandler, self).format(record)
         level_map: Dict = {
-            logging.CRITICAL: "warning",
+            logging.CRITICAL: "error",
             logging.ERROR: "error",
             logging.WARNING: "warning",
             logging.INFO: "warning",
