@@ -120,7 +120,7 @@ def test_create_and_wait(await_function_deployment_mock, response, expectation, 
         assert response == create_and_wait(
             cognite_experimental_client_mock, "external_id", "id", Path("some path"), 1, "api key"
         )
-        assert await_function_deployment_mock.call_args_list == [call(cognite_experimental_client_mock, "id", 600)]
+        assert await_function_deployment_mock.call_args_list == [call(cognite_experimental_client_mock, "id", 1200)]
 
 
 @patch("function.create_and_wait")
