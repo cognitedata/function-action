@@ -37,7 +37,7 @@ class GitHubLogHandler(logging.StreamHandler):
             logging.CRITICAL: "warning",
             logging.ERROR: "error",
             logging.WARNING: "warning",
-            logging.INFO: "debug",
+            logging.INFO: "warning",
             logging.DEBUG: "debug",
             logging.NOTSET: "warning",
         }
