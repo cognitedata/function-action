@@ -1,4 +1,5 @@
 import os
+import random
 from typing import List, Optional
 
 import yaml
@@ -27,6 +28,8 @@ def main(config: FunctionConfig) -> Optional[Function]:
 
 if __name__ == "__main__":
     # Input used for deploying using a configuration file
+
+    random.seed()
 
     GITHUB_EVENT_NAME = os.getenv("GITHUB_EVENT_NAME", "undefined")
     GITHUB_REF = os.getenv("GITHUB_REF", "undefined")

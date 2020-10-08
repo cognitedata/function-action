@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 from pathlib import Path
-from random import randint, random
+from random import randint
 from tempfile import TemporaryDirectory
 from typing import Optional
 
@@ -45,7 +45,7 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
                 return function
             if function.status == "Failed":
                 raise FunctionDeployError(function.error["trace"])
-        time.sleep(randint(3, 15))
+        time.sleep(randint(3, 15))  # nosec
 
     return None
 
