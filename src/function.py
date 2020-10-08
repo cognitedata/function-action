@@ -2,12 +2,14 @@ import os
 import shutil
 import time
 from pathlib import Path
+from random import randint, random
 from tempfile import TemporaryDirectory
 from typing import Optional
 
 from cognite.client.data_classes import FileMetadata
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
+from retry import retry
 
 from config import FunctionConfig
 
@@ -34,18 +36,18 @@ def zip_and_upload_folder(client: CogniteClient, folder: Path, file_name: str) -
     raise FunctionDeployError("Failed to upload file to Cognite Data Fusion")
 
 
-def await_function_deployment(client: CogniteClient, external_id: str, wait_time_seconds: int):
+def await_function_deployment(client: CogniteClient, external_id: str, wait_time_seconds: int) -> Optional[Function]:
     t_end = time.time() + wait_time_seconds
-    while time.time() < t_end:
+    while time.time() <= t_end:
         function: Optional[Function] = client.functions.retrieve(external_id=external_id)
         if function is not None:
             if function.status == "Ready":
-                return True
+                return function
             if function.status == "Failed":
                 raise FunctionDeployError(function.error["trace"])
-        time.sleep(3.0)
+        time.sleep(randint(3, 15))
 
-    return False
+    return None
 
 
 def try_delete(client: CogniteClient, external_id: str):
@@ -93,14 +95,15 @@ def create_and_wait(
     )
     print(f"Created function {external_id}. Waiting for deployment ...")
     wait_time_seconds = 600  # 10 minutes
-    deployed = await_function_deployment(client, function.external_id, wait_time_seconds)
-    if not deployed:
+    deployed = await_function_deployment(client, external_id, wait_time_seconds)
+    if deployed is None:
         print(f"Function {external_id} did not deploy within {wait_time_seconds} seconds.")
         raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_seconds} seconds.")
     print(f"Function {external_id} is deployed.")
-    return function
+    return deployed
 
 
+@retry(exceptions=[FunctionDeployTimeout, FunctionDeployError], tries=5, delay=3, backoff=3, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)
     file_id = zip_and_upload_folder(client, Path(config.folder_path), zip_file_name)
@@ -113,9 +116,9 @@ def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function
             file_id=file_id,
             api_key=config.tenant.runtime_key,
         )
-    except (FunctionDeployError, FunctionDeployTimeout) as e:
+    except (FunctionDeployError, FunctionDeployTimeout):
         try_delete_function_file(client, zip_file_name)
-        raise e
+        raise
 
 
 def deploy_function(client: CogniteClient, config: FunctionConfig) -> Optional[Function]:

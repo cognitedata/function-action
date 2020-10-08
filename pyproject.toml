@@ -21,6 +21,7 @@ cognite-sdk-experimental = "0.19.0"
 pydantic = "1.6.1"
 python-crontab = "2.5.1"
 PyYAML = "5.3.1"
+retry = "^0.9.2"
 
 [tool.poetry.dev-dependencies]
 bandit = "1.6.2"
