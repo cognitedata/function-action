@@ -32,6 +32,7 @@ class GitHubLogHandler(logging.StreamHandler):
 
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-a-debug-message
     def format(self, record):
+        message = super(LogHandler, self).format(record)
         level_map: Dict = {
             logging.CRITICAL: "warning",
             logging.ERROR: "error",
@@ -40,7 +41,9 @@ class GitHubLogHandler(logging.StreamHandler):
             logging.DEBUG: "debug",
             logging.NOTSET: "warning",
         }
-        return f"::{level_map.get(record.levelno)} file={record.filename},line={record.levelno}::{record.name}: {record.message}"
+        return (
+            f"::{level_map.get(record.levelno)} file={record.filename},line={record.levelno}::{record.name}: {message}"
+        )
 
 
 if __name__ == "__main__":
