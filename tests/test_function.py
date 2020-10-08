@@ -58,11 +58,15 @@ def test_zip_and_upload_folder(temp_dir_mock, shutil_mock):
 def test_await_function_deployment(
     retrieve_status, wait_time_seconds, expected, expectation, cognite_experimental_client_mock
 ):
-    cognite_experimental_client_mock.functions.retrieve.side_effect = [
-        Function(status=status, error={"trace": "some_error"}) for status in retrieve_status
-    ]
+    responses = [Function(status=status, error={"trace": "some_error"}) for status in retrieve_status]
+    cognite_experimental_client_mock.functions.retrieve.side_effect = responses
     with expectation:
-        assert expected == await_function_deployment(cognite_experimental_client_mock, "", wait_time_seconds)
+        r = await_function_deployment(cognite_experimental_client_mock, "", wait_time_seconds)
+        if expected:
+            assert r
+            assert r == responses[-1]
+        else:
+            assert r is None
 
 
 @patch("function.try_delete_function")
@@ -104,16 +108,16 @@ def test_try_delete_function_file(file_exists_mock, cognite_client_mock, exists,
 
 
 @pytest.mark.parametrize(
-    "success, expectation",
-    [(True, contextlib.nullcontext()), (False, pytest.raises(FunctionDeployTimeout))],
+    "response, expectation",
+    [(Function(external_id="id", id=1), contextlib.nullcontext()), (None, pytest.raises(FunctionDeployTimeout))],
 )
 @patch("function.await_function_deployment")
-def test_create_and_wait(await_function_deployment_mock, success, expectation, cognite_experimental_client_mock):
-    await_function_deployment_mock.return_value = success
+def test_create_and_wait(await_function_deployment_mock, response, expectation, cognite_experimental_client_mock):
+    await_function_deployment_mock.return_value = response
     function = Function(external_id="id")
     cognite_experimental_client_mock.functions.create.return_value = function
     with expectation:
-        assert function == create_and_wait(
+        assert response == create_and_wait(
             cognite_experimental_client_mock, "external_id", "id", Path("some path"), 1, "api key"
         )
         assert await_function_deployment_mock.call_args_list == [call(cognite_experimental_client_mock, "id", 600)]

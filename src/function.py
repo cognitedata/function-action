@@ -2,7 +2,6 @@ import os
 import shutil
 import time
 from pathlib import Path
-from random import randint
 from tempfile import TemporaryDirectory
 from typing import Optional
 
@@ -45,7 +44,7 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
                 return function
             if function.status == "Failed":
                 raise FunctionDeployError(function.error["trace"])
-        time.sleep(randint(3, 15))  # nosec
+        time.sleep(3)
 
     return None
 
@@ -94,7 +93,7 @@ def create_and_wait(
         function_path=function_path,
     )
     print(f"Created function {external_id}. Waiting for deployment ...")
-    wait_time_seconds = 600  # 10 minutes
+    wait_time_seconds = 1200  # 20 minutes
     deployed = await_function_deployment(client, external_id, wait_time_seconds)
     if deployed is None:
         print(f"Function {external_id} did not deploy within {wait_time_seconds} seconds.")
@@ -103,7 +102,7 @@ def create_and_wait(
     return deployed
 
 
-@retry(exceptions=[FunctionDeployTimeout, FunctionDeployError], tries=5, delay=3, backoff=3, jitter=2)
+@retry(exceptions=(FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)
     file_id = zip_and_upload_folder(client, Path(config.folder_path), zip_file_name)
