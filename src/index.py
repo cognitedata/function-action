@@ -26,32 +26,6 @@ def main(config: FunctionConfig) -> Optional[Function]:
     return f
 
 
-BUILTIN_ATTRS = {
-    "args",
-    "asctime",
-    "created",
-    "exc_info",
-    "exc_text",
-    "filename",
-    "funcName",
-    "levelname",
-    "levelno",
-    "lineno",
-    "module",
-    "msecs",
-    "message",
-    "msg",
-    "name",
-    "pathname",
-    "process",
-    "processName",
-    "relativeCreated",
-    "stack_info",
-    "thread",
-    "threadName",
-}
-
-
 class GitHubLogHandler(logging.StreamHandler):
     def __init__(self, stream=None):
         super(GitHubLogHandler, self).__init__(stream=stream)
