@@ -1,11 +1,12 @@
+import logging
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import yaml
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 
-from config import FunctionConfig, ScheduleConfig, TenantConfig
+from config import FunctionConfig, TenantConfig
 from function import deploy_function
 from schedule import deploy_schedule
 
@@ -25,7 +26,55 @@ def main(config: FunctionConfig) -> Optional[Function]:
     return f
 
 
+BUILTIN_ATTRS = {
+    "args",
+    "asctime",
+    "created",
+    "exc_info",
+    "exc_text",
+    "filename",
+    "funcName",
+    "levelname",
+    "levelno",
+    "lineno",
+    "module",
+    "msecs",
+    "message",
+    "msg",
+    "name",
+    "pathname",
+    "process",
+    "processName",
+    "relativeCreated",
+    "stack_info",
+    "thread",
+    "threadName",
+}
+
+
+class GitHubLogHandler(logging.StreamHandler):
+    def __init__(self, stream=None):
+        super(GitHubLogHandler, self).__init__(stream=stream)
+
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-a-debug-message
+    def format(self, record):
+        level_map: Dict = {
+            logging.CRITICAL: 'warning',
+            logging.ERROR: 'error',
+            logging.WARNING: 'warning',
+            logging.INFO: 'debug',
+            logging.DEBUG: 'debug',
+            logging.NOTSET: 'warning',
+        }
+        return f"::{level_map.get(record.levelno)} file={record.filename},line={record.levelno}::{record.name}: {record.message}"
+
+
 if __name__ == "__main__":
+    handler = GitHubLogHandler()
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
     # Input used for deploying using a configuration file
 
     GITHUB_EVENT_NAME = os.getenv("GITHUB_EVENT_NAME", "undefined")
@@ -52,4 +101,5 @@ if __name__ == "__main__":
     )
 
     if function is not None:
+        # return output parameter
         print(f"::set-output name=function_external_id::{function.external_id}")
