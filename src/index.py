@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 import yaml
 from cognite.experimental import CogniteClient
@@ -59,12 +59,12 @@ class GitHubLogHandler(logging.StreamHandler):
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-a-debug-message
     def format(self, record):
         level_map: Dict = {
-            logging.CRITICAL: 'warning',
-            logging.ERROR: 'error',
-            logging.WARNING: 'warning',
-            logging.INFO: 'debug',
-            logging.DEBUG: 'debug',
-            logging.NOTSET: 'warning',
+            logging.CRITICAL: "warning",
+            logging.ERROR: "error",
+            logging.WARNING: "warning",
+            logging.INFO: "debug",
+            logging.DEBUG: "debug",
+            logging.NOTSET: "warning",
         }
         return f"::{level_map.get(record.levelno)} file={record.filename},line={record.levelno}::{record.name}: {record.message}"
 
