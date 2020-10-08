@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import time
@@ -20,15 +21,18 @@ class FunctionDeployError(Exception):
     pass
 
 
+logger = logging.getLogger(__name__)
+
+
 def zip_and_upload_folder(client: CogniteClient, folder: Path, file_name: str) -> int:
-    print(f"Uploading code from {folder} to {file_name}")
+    logger.info(f"Uploading code from {folder} to {file_name}")
     with TemporaryDirectory() as tmpdir:
         zip_path = Path(tmpdir) / "function"
         shutil.make_archive(str(zip_path), "zip", str(folder))
         file: FileMetadata = client.files.upload(
             f"{zip_path}.zip", name=file_name, external_id=file_name, overwrite=True
         )
-        print(f"Upload complete.")
+        logger.info(f"Upload complete.")
         if file.id is not None:
             return file.id
     raise FunctionDeployError("Failed to upload file to Cognite Data Fusion")
@@ -63,16 +67,16 @@ def try_delete_function(client: CogniteClient, external_id: str):
                 # 2. those removed permanently
                 client.functions.schedules.delete(schedule.id)
 
-            print(f"Found existing function {external_id}. Deleting ...")
+            logger.info(f"Found existing function {external_id}. Deleting ...")
             client.functions.delete(external_id=external_id)
-            print(f"Did delete function {external_id}.")
+            logger.info(f"Did delete function {external_id}.")
 
 
 def try_delete_function_file(client: CogniteClient, external_id: str):
     if file_exists(client, external_id):
-        print(f"Found existing file {external_id}. Deleting ...")
+        logger.info(f"Found existing file {external_id}. Deleting ...")
         client.files.delete(external_id=external_id)
-        print(f"Did delete file {external_id}.")
+        logger.info(f"Did delete file {external_id}.")
 
 
 def create_and_wait(
@@ -83,7 +87,7 @@ def create_and_wait(
     file_id: int,
     api_key: str,
 ):
-    print(f"Will create function {external_id}")
+    logger.info(f"Will create function {external_id}")
     function: Function = client.functions.create(
         name=name,
         external_id=external_id,
@@ -91,13 +95,13 @@ def create_and_wait(
         api_key=api_key,
         function_path=function_path,
     )
-    print(f"Created function {external_id}. Waiting for deployment ...")
+    logger.info(f"Created function {external_id}. Waiting for deployment ...")
     wait_time_seconds = 600  # 10 minutes
     deployed = await_function_deployment(client, function.external_id, wait_time_seconds)
     if not deployed:
-        print(f"Function {external_id} did not deploy within {wait_time_seconds} seconds.")
+        logger.error(f"Function {external_id} did not deploy within {wait_time_seconds} seconds.")
         raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_seconds} seconds.")
-    print(f"Function {external_id} is deployed.")
+    logger.info(f"Function {external_id} is deployed.")
     return function
 
 
@@ -125,7 +129,7 @@ def deploy_function(client: CogniteClient, config: FunctionConfig) -> Optional[F
     if not config.remove_only:
         # Upload file and create function
         function = upload_and_create(client, config)
-        print(f"Successfully created and deployed function {config.external_id} with id {function.id}")
+        logger.info(f"Successfully created and deployed function {config.external_id} with id {function.id}")
 
     return function
 
