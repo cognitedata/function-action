@@ -1,7 +1,11 @@
+import logging
+
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 
 from config import FunctionConfig
+
+logger = logging.getLogger(__name__)
 
 
 def deploy_schedule(client: CogniteClient, function: Function, config: FunctionConfig):
@@ -20,4 +24,4 @@ def deploy_schedule(client: CogniteClient, function: Function, config: FunctionC
             name=schedule.name,
             data=schedule.data,
         )
-        print(f"Successfully deployed schedule {schedule.name} with cron expression {schedule.cron}.")
+        logger.info(f"Successfully deployed schedule {schedule.name} with cron expression {schedule.cron}.")

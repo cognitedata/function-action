@@ -1,5 +1,6 @@
+import logging
 import os
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import yaml
 from cognite.experimental import CogniteClient
@@ -25,7 +26,32 @@ def main(config: FunctionConfig) -> Optional[Function]:
     return f
 
 
+class GitHubLogHandler(logging.StreamHandler):
+    def __init__(self, stream=None):
+        super(GitHubLogHandler, self).__init__(stream=stream)
+
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-a-debug-message
+    def format(self, record):
+        message = super(GitHubLogHandler, self).format(record)
+        level_map: Dict = {
+            logging.CRITICAL: "error",
+            logging.ERROR: "error",
+            logging.WARNING: "warning",
+            logging.INFO: "warning",
+            logging.DEBUG: "debug",
+            logging.NOTSET: "warning",
+        }
+        return (
+            f"::{level_map.get(record.levelno)} file={record.filename},line={record.levelno}::{record.name}: {message}"
+        )
+
+
 if __name__ == "__main__":
+    handler = GitHubLogHandler()
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
     # Input used for deploying using a configuration file
 
     GITHUB_EVENT_NAME = os.getenv("GITHUB_EVENT_NAME", "undefined")
@@ -52,4 +78,5 @@ if __name__ == "__main__":
     )
 
     if function is not None:
+        # return output parameter
         print(f"::set-output name=function_external_id::{function.external_id}")
