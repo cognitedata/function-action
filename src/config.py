@@ -6,6 +6,13 @@ from cognite.client import CogniteClient
 from crontab import CronSlices
 from pydantic import BaseModel, root_validator, validator
 
+# TenantConfig parameters:
+KEY_CDF_PROJECT = "cdf_project"
+KEY_DEPLOYMENT_KEY = "deployment_key"
+KEY_RUNTIME_KEY = "runtime_key"
+KEY_CDF_BASE_URL = "cdf_base_url"
+CLIENT_NAME_FUNC_ACTION = "function-action-validator"
+
 
 class TenantConfig(BaseModel):
     cdf_project: Optional[str]
@@ -13,13 +20,13 @@ class TenantConfig(BaseModel):
     runtime_key: str
     cdf_base_url: str
 
-    @validator("cdf_project", pre=True)
+    @validator(KEY_CDF_PROJECT, pre=True)
     def valid_project(cls, value):
         if value is not None and value == "":
             raise ValueError("CDF project should not be empty.")
         return value
 
-    @validator("deployment_key", pre=True)
+    @validator(KEY_DEPLOYMENT_KEY, pre=True)
     def valid_deployment_key(cls, value):
         if value is None:
             raise ValueError("Missing deployment key.'")
@@ -27,7 +34,7 @@ class TenantConfig(BaseModel):
             raise ValueError("Deployment key should not be empty.")
         return value
 
-    @validator("runtime_key", pre=True)
+    @validator(KEY_RUNTIME_KEY, pre=True)
     def valid_runtime_key(cls, value):
         if value is None:
             raise ValueError("Missing runtime key.'")
@@ -37,14 +44,14 @@ class TenantConfig(BaseModel):
 
     @root_validator()
     def check_credentials(cls, values):
-        project = values.get("cdf_project")
+        project = values.get(KEY_CDF_PROJECT)
         if project is None:
             return values
 
         deployment_client = CogniteClient(
-            api_key=values.get("deployment_key"),
-            base_url=values.get("cdf_base_url"),
-            client_name="function-action-validator",
+            api_key=values.get(KEY_DEPLOYMENT_KEY),
+            base_url=values.get(KEY_CDF_BASE_URL),
+            client_name=CLIENT_NAME_FUNC_ACTION,
         )
         if not deployment_client.login.status().logged_in:
             raise ValueError("Can't login with deployment credentials")
@@ -56,9 +63,9 @@ class TenantConfig(BaseModel):
                 f"does not match the project defined: {project}"
             )
         runtime_client = CogniteClient(
-            api_key=values.get("runtime_key"),
-            base_url=values.get("cdf_base_url"),
-            client_name="function-action-validator",
+            api_key=values.get(KEY_RUNTIME_KEY),
+            base_url=values.get(KEY_CDF_BASE_URL),
+            client_name=CLIENT_NAME_FUNC_ACTION,
         )
         if not runtime_client.login.status().logged_in:
             raise ValueError("Can't login with runtime credentials")
