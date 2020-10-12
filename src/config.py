@@ -22,30 +22,30 @@ class TenantConfig(BaseModel):
 
     @validator(KEY_CDF_PROJECT, pre=True)
     def valid_project(cls, value):
-        if value is not None and value == "":
-            raise ValueError("CDF project should not be empty.")
+        if isinstance(value, str) and value == "":
+            raise ValueError("CDF project should not be an empty string.")
         return value
 
     @validator(KEY_DEPLOYMENT_KEY, pre=True)
     def valid_deployment_key(cls, value):
         if value is None:
-            raise ValueError("Missing deployment key.'")
+            raise ValueError("Missing Cognite Functions deployment API-key.'")
         elif value == "":
-            raise ValueError("Deployment key should not be empty.")
+            raise ValueError("Deployment API-key for Cognite Functions should not be empty.")
         return value
 
     @validator(KEY_RUNTIME_KEY, pre=True)
     def valid_runtime_key(cls, value):
         if value is None:
-            raise ValueError("Missing runtime key.'")
+            raise ValueError("Missing Cognite Functions runtime API-key.'")
         elif value == "":
-            raise ValueError("Runtime key should not be empty.")
+            raise ValueError("Runtime API-key for Cognite Functions should not be empty.")
         return value
 
     @validator(KEY_CDF_BASE_URL, pre=True)
     def valid_cdf_base_url_key(cls, value):
         if isinstance(value, str) and value.strip() == "":
-            raise ValueError("CDF base url key should not be an empty string.")
+            raise ValueError("CDF base url should not be an empty string.")
         return value
 
     @root_validator()
