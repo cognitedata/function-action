@@ -6,9 +6,12 @@ from cognite.client import CogniteClient
 from crontab import CronSlices
 from pydantic import BaseModel, root_validator, validator
 
-
-class InvalidCronException(Exception):
-    pass
+# TenantConfig parameters:
+KEY_CDF_PROJECT = "cdf_project"
+KEY_DEPLOYMENT_KEY = "deployment_key"
+KEY_RUNTIME_KEY = "runtime_key"
+KEY_CDF_BASE_URL = "cdf_base_url"
+CLIENT_NAME_FUNC_ACTION = "function-action-validator"
 
 
 class TenantConfig(BaseModel):
@@ -17,54 +20,58 @@ class TenantConfig(BaseModel):
     runtime_key: str
     cdf_base_url: str
 
-    @validator("cdf_project", pre=True)
+    @validator(KEY_CDF_PROJECT, pre=True)
     def valid_project(cls, value):
         if value is not None and value == "":
             raise ValueError("CDF project should not be empty.")
         return value
 
-    @validator("deployment_key", pre=True)
+    @validator(KEY_DEPLOYMENT_KEY, pre=True)
     def valid_deployment_key(cls, value):
         if value is None:
             raise ValueError("Missing deployment key.'")
-        if value is not None and value == "":
+        elif value == "":
             raise ValueError("Deployment key should not be empty.")
         return value
 
-    @validator("runtime_key", pre=True)
+    @validator(KEY_RUNTIME_KEY, pre=True)
     def valid_runtime_key(cls, value):
         if value is None:
             raise ValueError("Missing runtime key.'")
-        if value is not None and value == "":
+        elif value == "":
             raise ValueError("Runtime key should not be empty.")
         return value
 
     @root_validator()
     def check_credentials(cls, values):
-        project = values.get("cdf_project")
-        if project is not None:
-            deployment_client = CogniteClient(
-                api_key=values.get("deployment_key"),
-                base_url=values.get("cdf_base_url"),
-                client_name="function-action-validator",
+        project = values.get(KEY_CDF_PROJECT)
+        if project is None:
+            return values
+
+        deployment_client = CogniteClient(
+            api_key=values.get(KEY_DEPLOYMENT_KEY),
+            base_url=values.get(KEY_CDF_BASE_URL),
+            client_name=CLIENT_NAME_FUNC_ACTION,
+        )
+        if not deployment_client.login.status().logged_in:
+            raise ValueError("Can't login with deployment credentials")
+
+        inferred_project = deployment_client.login.status().project
+        if inferred_project != project:
+            raise ValueError(
+                f"Inferred project, {inferred_project}, from the provided deployment credentials "
+                f"does not match the project defined: {project}"
             )
-            if not deployment_client.login.status().logged_in:
-                raise ValueError("Can't login with deployment credentials")
+        runtime_client = CogniteClient(
+            api_key=values.get(KEY_RUNTIME_KEY),
+            base_url=values.get(KEY_CDF_BASE_URL),
+            client_name=CLIENT_NAME_FUNC_ACTION,
+        )
+        if not runtime_client.login.status().logged_in:
+            raise ValueError("Can't login with runtime credentials")
 
-            if deployment_client.login.status().project != project:
-                raise ValueError(f"Provided deployment credentials doesn't match the project defined: {project}")
-
-            runtime_client = CogniteClient(
-                api_key=values.get("runtime_key"),
-                base_url=values.get("cdf_base_url"),
-                client_name="function-action-validator",
-            )
-            if not runtime_client.login.status().logged_in:
-                raise ValueError("Can't login with runtime credentials")
-
-            if runtime_client.login.status().project != project:
-                raise ValueError(f"Provided runtime credentials doesn't match the project defined: {project}")
-
+        if runtime_client.login.status().project != project:
+            raise ValueError(f"Provided runtime credentials doesn't match the project defined: {project}")
         return values
 
 
@@ -75,10 +82,10 @@ class ScheduleConfig(BaseModel):
 
     @validator("cron")
     def valid_cron(cls, value):
+        value = value.strip()
         if not CronSlices.is_valid(value):
-            raise InvalidCronException(f"Invalid cron expression: '{value}'")
-
-        return value.strip()
+            raise ValueError(f"Invalid cron expression: '{value}'")
+        return value
 
 
 class FunctionConfig(BaseModel):
@@ -103,10 +110,10 @@ class FunctionConfig(BaseModel):
 
     @root_validator()
     def check_schedules(cls, values):
-        file = values.get("schedule_file", None)
+        file = values.get("schedule_file")
         folder = values.get("folder_path")
         if file is not None and folder is not None:
-            path = Path(folder + "/" + file)
+            path = Path(folder) / Path(file)
             if not (path.exists() and path.is_file()):
                 raise ValueError(f"Schedules file doesn't exist at path: {path.absolute()}")
         return values
@@ -114,13 +121,15 @@ class FunctionConfig(BaseModel):
     @property
     def schedules(self) -> List[ScheduleConfig]:
         if self.schedule_file is not None:
-            path = Path(self.folder_path + "/" + self.schedule_file)
-            collection: List[Dict] = yaml.safe_load(path.open(mode="r").read())
+            path = Path(self.folder_path) / Path(self.schedule_file)
+            with path.open(mode="r") as f:
+                collection: List[Dict] = yaml.safe_load(f.read())
             return [
                 ScheduleConfig(
-                    cron=c.get("cron"), name=self.external_id + ":" + c.get("name", "undefined"), data=c.get("data", {})
+                    cron=col.get("cron"),
+                    name=self.external_id + ":" + col.get("name", "undefined"),
+                    data=col.get("data", {}),
                 )
-                for c in collection
+                for col in collection
             ]
-
         return []
