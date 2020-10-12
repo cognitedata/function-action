@@ -15,9 +15,7 @@ class TenantConfig(BaseModel):
 
     @validator("cdf_project", pre=True)
     def valid_project(cls, value):
-        if value is None:
-            raise ValueError("Missing CDF project.")
-        elif value == "":
+        if value is not None and value == "":
             raise ValueError("CDF project should not be empty.")
         return value
 
@@ -39,34 +37,34 @@ class TenantConfig(BaseModel):
 
     @root_validator()
     def check_credentials(cls, values):
-        project = values["cdf_project"]
-        if project is not None:
-            deployment_client = CogniteClient(
-                api_key=values.get("deployment_key"),
-                base_url=values.get("cdf_base_url"),
-                client_name="function-action-validator",
+        project = values.get("cdf_project")
+        if project is None:
+            return values
+
+        deployment_client = CogniteClient(
+            api_key=values.get("deployment_key"),
+            base_url=values.get("cdf_base_url"),
+            client_name="function-action-validator",
+        )
+        if not deployment_client.login.status().logged_in:
+            raise ValueError("Can't login with deployment credentials")
+
+        inferred_project = deployment_client.login.status().project
+        if inferred_project != project:
+            raise ValueError(
+                f"Inferred project, {inferred_project}, from the provided deployment credentials "
+                f"does not match the project defined: {project}"
             )
-            if not deployment_client.login.status().logged_in:
-                raise ValueError("Can't login with deployment credentials")
+        runtime_client = CogniteClient(
+            api_key=values.get("runtime_key"),
+            base_url=values.get("cdf_base_url"),
+            client_name="function-action-validator",
+        )
+        if not runtime_client.login.status().logged_in:
+            raise ValueError("Can't login with runtime credentials")
 
-            inferred_project = deployment_client.login.status().project
-            if inferred_project != project:
-                raise ValueError(
-                    f"Inferred project, {inferred_project}, from the provided deployment credentials "
-                    f"does not match the project defined: {project}"
-                )
-
-            runtime_client = CogniteClient(
-                api_key=values.get("runtime_key"),
-                base_url=values.get("cdf_base_url"),
-                client_name="function-action-validator",
-            )
-            if not runtime_client.login.status().logged_in:
-                raise ValueError("Can't login with runtime credentials")
-
-            if runtime_client.login.status().project != project:
-                raise ValueError(f"Provided runtime credentials doesn't match the project defined: {project}")
-
+        if runtime_client.login.status().project != project:
+            raise ValueError(f"Provided runtime credentials doesn't match the project defined: {project}")
         return values
 
 
