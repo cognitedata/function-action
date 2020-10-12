@@ -1,17 +1,16 @@
 import logging
 import os
-import shutil
 import time
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Optional
 
-from cognite.client.data_classes import FileMetadata
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 from retry import retry
 
 from config import FunctionConfig
+
+logger = logging.getLogger(__name__)
 
 
 class FunctionDeployTimeout(Exception):
@@ -22,25 +21,8 @@ class FunctionDeployError(Exception):
     pass
 
 
-logger = logging.getLogger(__name__)
-
-
-def zip_and_upload_folder(client: CogniteClient, folder: Path, file_name: str) -> int:
-    logger.info(f"Uploading code from {folder} to {file_name}")
-    with TemporaryDirectory() as tmpdir:
-        zip_path = Path(tmpdir) / "function"
-        shutil.make_archive(str(zip_path), "zip", str(folder))
-        file: FileMetadata = client.files.upload(
-            f"{zip_path}.zip", name=file_name, external_id=file_name, overwrite=True
-        )
-        logger.info(f"Upload complete.")
-        if file.id is not None:
-            return file.id
-    raise FunctionDeployError("Failed to upload file to Cognite Data Fusion")
-
-
-def await_function_deployment(client: CogniteClient, external_id: str, wait_time_seconds: int) -> Optional[Function]:
-    t_end = time.time() + wait_time_seconds
+def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Optional[Function]:
+    t_end = time.time() + wait_time_sec
     while time.time() <= t_end:
         function: Optional[Function] = client.functions.retrieve(external_id=external_id)
         if function is not None:
@@ -63,14 +45,14 @@ def try_delete_function(client: CogniteClient, external_id: str):
         func = client.functions.retrieve(external_id=external_id)
         if func is not None:
             for schedule in func.list_schedules():
-                # we want to delete All schedules since we don't keep state anywhere
-                # 1. those we are going to recreate
-                # 2. those removed permanently
+                # We want to delete ALL schedules since we don't keep state anywhere
+                # 1. Those we are going to recreate
+                # 2. Those removed permanently
                 client.functions.schedules.delete(schedule.id)
 
-            logger.info(f"Found existing function {external_id}. Deleting ...")
+            logger.info(f"Found existing function '{external_id}'. Deleting ...")
             client.functions.delete(external_id=external_id)
-            logger.info(f"Did delete function {external_id}.")
+            logger.info(f"Delete of function '{external_id}' successful!")
 
 
 def try_delete_function_file(client: CogniteClient, external_id: str):
@@ -80,47 +62,30 @@ def try_delete_function_file(client: CogniteClient, external_id: str):
         logger.info(f"Did delete file {external_id}.")
 
 
-def create_and_wait(
-    client: CogniteClient,
-    name: str,
-    external_id: str,
-    function_path: str,
-    file_id: int,
-    api_key: str,
-):
+def create_and_wait(client: CogniteClient, external_id: str, config: FunctionConfig):
     logger.info(f"Will create function {external_id}")
-    function: Function = client.functions.create(
-        name=name,
+    client.functions.create(
+        name=external_id,
         external_id=external_id,
-        file_id=file_id,
-        api_key=api_key,
-        function_path=function_path,
+        folder=config.folder_path,
+        api_key=config.tenant.runtime_key,
+        function_path=config.file,
     )
-    logging.info(f"Created function {external_id}. Waiting for deployment ...")
-    wait_time_seconds = 1200  # 20 minutes
-    deployed = await_function_deployment(client, external_id, wait_time_seconds)
+    logging.info(f"Created function {external_id}. Waiting for deployment...")
+    wait_time_sec = config.deploy_wait_time_sec
+    deployed = await_function_deployment(client, external_id, wait_time_sec)
     if deployed is None:
-        print(f"Function {external_id} did not deploy within {wait_time_seconds} seconds.")
-        raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_seconds} seconds.")
+        raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_sec} seconds.")
     logging.info(f"Function {external_id} is deployed.")
     return deployed
 
 
 @retry(exceptions=(FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
-    zip_file_name = get_file_name(config.external_id)
-    file_id = zip_and_upload_folder(client, Path(config.folder_path), zip_file_name)
     try:
-        return create_and_wait(
-            client,
-            config.external_id,
-            external_id=config.external_id,
-            function_path=config.file,
-            file_id=file_id,
-            api_key=config.tenant.runtime_key,
-        )
+        return create_and_wait(client=client, external_id=config.external_id, config=config)
     except (FunctionDeployError, FunctionDeployTimeout):
-        try_delete_function_file(client, zip_file_name)
+        try_delete_function_file(client, get_file_name(config.external_id))
         raise
 
 
@@ -137,21 +102,19 @@ def deploy_function(client: CogniteClient, config: FunctionConfig) -> Optional[F
 
 
 def function_exist(client: CogniteClient, external_id: str) -> bool:
-    return bool(client.functions.retrieve(external_id=external_id))
+    return client.functions.retrieve(external_id=external_id) is not None
 
 
 def file_exists(client: CogniteClient, external_id: str) -> bool:
-    return bool(client.files.retrieve(external_id=external_id))
+    return client.files.retrieve(external_id=external_id) is not None
 
 
 def get_function_name(function_folder: Path, is_pr: bool) -> str:
     github_repo = os.environ["GITHUB_REPOSITORY"]
     github_head_ref = os.environ["GITHUB_HEAD_REF"]
-    full_path = Path(github_repo) / f"{'' if function_folder == '.' else function_folder}"
-    name = f"{full_path}{f'/{github_head_ref}' if is_pr else ':latest'}"
-
-    return name
+    full_path = Path(github_repo) / "" if function_folder == "." else function_folder
+    return full_path + (f"/{github_head_ref}" if is_pr else ":latest")
 
 
 def get_file_name(function_name: str) -> str:
-    return function_name.replace("/", "_") + ".zip"  # / not allowed in file names
+    return function_name.replace("/", "-") + ".zip"  # / not allowed in file names

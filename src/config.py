@@ -18,7 +18,7 @@ class TenantConfig(BaseModel):
     cdf_project: Optional[str]
     deployment_key: str
     runtime_key: str
-    cdf_base_url: str
+    cdf_base_url: Optional[str]
 
     @validator(KEY_CDF_PROJECT, pre=True)
     def valid_project(cls, value):
@@ -40,6 +40,12 @@ class TenantConfig(BaseModel):
             raise ValueError("Missing runtime key.'")
         elif value == "":
             raise ValueError("Runtime key should not be empty.")
+        return value
+
+    @validator(KEY_CDF_BASE_URL, pre=True)
+    def valid_cdf_base_url_key(cls, value):
+        if isinstance(value, str) and value.strip() == "":
+            raise ValueError("CDF base url key should not be an empty string.")
         return value
 
     @root_validator()
@@ -95,6 +101,7 @@ class FunctionConfig(BaseModel):
     schedule_file: Optional[str]
     tenant: TenantConfig
     remove_only: bool
+    deploy_wait_time_sec: int = 1200  # 20 minutes
 
     @validator("file")
     def valid_file(cls, value):

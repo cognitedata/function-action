@@ -31,10 +31,7 @@ def test_cross_project_config(monkeypatch, loggedin_status):
                     cdf_base_url="https://api.cognitedata.com",
                 ),
                 schedules=[
-                    ScheduleConfig(
-                        name=f"Schedule for test:hello_world_function #{i}",
-                        cron=s,
-                    )
+                    ScheduleConfig(name=f"Schedule for test:hello_world_function #{i}", cron=s)
                     for i, s in enumerate(schedules)
                 ],
                 remove_only=False,

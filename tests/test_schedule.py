@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call
 
 from cognite.experimental.data_classes.functions import FunctionSchedule
 

@@ -35,12 +35,7 @@ def test_zip_and_upload_folder(temp_dir_mock, shutil_mock):
 
         assert result == 1
         assert mock_client.files.upload.call_args_list == [
-            call(
-                "temp_dir/function.zip",
-                name="filename",
-                external_id="filename",
-                overwrite=True,
-            )
+            call("temp_dir/function.zip", name="filename", external_id="filename", overwrite=True)
         ]
         assert shutil_mock.make_archive.call_args_list == [call("temp_dir/function", "zip", "path")]
 
@@ -72,9 +67,7 @@ def test_await_function_deployment(
 @patch("function.try_delete_function")
 @patch("function.try_delete_function_file")
 def test_try_delete(
-    try_delete_function_file_mock,
-    try_delete_function,
-    cognite_client_mock,
+    try_delete_function_file_mock, try_delete_function, cognite_client_mock,
 ):
     file_name = "file/external_id"
     try_delete(cognite_client_mock, file_name)
@@ -84,8 +77,7 @@ def test_try_delete(
 
 
 @pytest.mark.parametrize(
-    "exists, expected_delete_calls",
-    [(True, [call(external_id="some id")]), (False, [])],
+    "exists, expected_delete_calls", [(True, [call(external_id="some id")]), (False, [])],
 )
 @patch("function.function_exist")
 def test_try_delete_function(functions_exist_mock, exists, expected_delete_calls, cognite_experimental_client_mock):
@@ -96,8 +88,7 @@ def test_try_delete_function(functions_exist_mock, exists, expected_delete_calls
 
 
 @pytest.mark.parametrize(
-    "exists, expected_delete_calls",
-    [(True, [call(external_id="some id")]), (False, [])],
+    "exists, expected_delete_calls", [(True, [call(external_id="some id")]), (False, [])],
 )
 @patch("function.file_exists")
 def test_try_delete_function_file(file_exists_mock, cognite_client_mock, exists, expected_delete_calls):
@@ -195,12 +186,7 @@ def test_deploy_function_push(
     result = deploy_function(cognite_client_mock, valid_config)
     assert result == expected_function
     assert try_delete_mock.call_args_list == [call(cognite_client_mock, valid_config.external_id)]
-    assert upload_and_create_mock.call_args_list == [
-        call(
-            cognite_client_mock,
-            valid_config,
-        )
-    ]
+    assert upload_and_create_mock.call_args_list == [call(cognite_client_mock, valid_config)]
 
 
 @patch("function.try_delete")
@@ -239,8 +225,7 @@ def test_get_function_name(is_pr, expected_name_postfix, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "function_name, file_name",
-    [("my file 1", "my file 1.zip"), ("my/file/1", "my_file_1.zip")],
+    "function_name, file_name", [("my file 1", "my file 1.zip"), ("my/file/1", "my_file_1.zip")],
 )
 def test_get_file_name(function_name, file_name):
     assert get_file_name(function_name) == file_name
