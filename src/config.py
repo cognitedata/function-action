@@ -7,10 +7,6 @@ from crontab import CronSlices
 from pydantic import BaseModel, root_validator, validator
 
 
-class InvalidCronException(Exception):
-    pass
-
-
 class TenantConfig(BaseModel):
     cdf_project: Optional[str]
     deployment_key: str
@@ -19,7 +15,9 @@ class TenantConfig(BaseModel):
 
     @validator("cdf_project", pre=True)
     def valid_project(cls, value):
-        if value is not None and value == "":
+        if value is None:
+            raise ValueError("Missing CDF project.")
+        elif value == "":
             raise ValueError("CDF project should not be empty.")
         return value
 
@@ -27,7 +25,7 @@ class TenantConfig(BaseModel):
     def valid_deployment_key(cls, value):
         if value is None:
             raise ValueError("Missing deployment key.'")
-        if value is not None and value == "":
+        elif value == "":
             raise ValueError("Deployment key should not be empty.")
         return value
 
@@ -35,13 +33,13 @@ class TenantConfig(BaseModel):
     def valid_runtime_key(cls, value):
         if value is None:
             raise ValueError("Missing runtime key.'")
-        if value is not None and value == "":
+        elif value == "":
             raise ValueError("Runtime key should not be empty.")
         return value
 
     @root_validator()
     def check_credentials(cls, values):
-        project = values.get("cdf_project")
+        project = values["cdf_project"]
         if project is not None:
             deployment_client = CogniteClient(
                 api_key=values.get("deployment_key"),
@@ -51,8 +49,12 @@ class TenantConfig(BaseModel):
             if not deployment_client.login.status().logged_in:
                 raise ValueError("Can't login with deployment credentials")
 
-            if deployment_client.login.status().project != project:
-                raise ValueError(f"Provided deployment credentials doesn't match the project defined: {project}")
+            inferred_project = deployment_client.login.status().project
+            if inferred_project != project:
+                raise ValueError(
+                    f"Inferred project, {inferred_project}, from the provided deployment credentials "
+                    f"does not match the project defined: {project}"
+                )
 
             runtime_client = CogniteClient(
                 api_key=values.get("runtime_key"),
@@ -75,10 +77,10 @@ class ScheduleConfig(BaseModel):
 
     @validator("cron")
     def valid_cron(cls, value):
+        value = value.strip()
         if not CronSlices.is_valid(value):
-            raise InvalidCronException(f"Invalid cron expression: '{value}'")
-
-        return value.strip()
+            raise ValueError(f"Invalid cron expression: '{value}'")
+        return value
 
 
 class FunctionConfig(BaseModel):
@@ -103,10 +105,10 @@ class FunctionConfig(BaseModel):
 
     @root_validator()
     def check_schedules(cls, values):
-        file = values.get("schedule_file", None)
+        file = values.get("schedule_file")
         folder = values.get("folder_path")
         if file is not None and folder is not None:
-            path = Path(folder + "/" + file)
+            path = Path(folder) / Path(file)
             if not (path.exists() and path.is_file()):
                 raise ValueError(f"Schedules file doesn't exist at path: {path.absolute()}")
         return values
@@ -114,13 +116,15 @@ class FunctionConfig(BaseModel):
     @property
     def schedules(self) -> List[ScheduleConfig]:
         if self.schedule_file is not None:
-            path = Path(self.folder_path + "/" + self.schedule_file)
-            collection: List[Dict] = yaml.safe_load(path.open(mode="r").read())
+            path = Path(self.folder_path) / Path(self.schedule_file)
+            with path.open(mode="r") as f:
+                collection: List[Dict] = yaml.safe_load(f.read())
             return [
                 ScheduleConfig(
-                    cron=c.get("cron"), name=self.external_id + ":" + c.get("name", "undefined"), data=c.get("data", {})
+                    cron=col.get("cron"),
+                    name=self.external_id + ":" + col.get("name", "undefined"),
+                    data=col.get("data", {}),
                 )
-                for c in collection
+                for col in collection
             ]
-
         return []
