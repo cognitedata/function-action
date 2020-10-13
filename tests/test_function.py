@@ -118,9 +118,7 @@ def test_upload_and_create_exception(
 
 @patch("function.try_delete")
 @patch("function.upload_and_create")
-def test_deploy_function_push(
-    upload_and_create_mock, try_delete_mock, cognite_client_mock, valid_config
-):
+def test_deploy_function_push(upload_and_create_mock, try_delete_mock, cognite_client_mock, valid_config):
     expected_function = Function()
     upload_and_create_mock.return_value = expected_function
 
@@ -132,9 +130,7 @@ def test_deploy_function_push(
 
 @patch("function.try_delete")
 @patch("function.upload_and_create")
-def test_function_delete(
-    upload_and_create_mock, try_delete_mock, monkeypatch, cognite_client_mock, valid_config
-):
+def test_function_delete(upload_and_create_mock, try_delete_mock, monkeypatch, cognite_client_mock, valid_config):
     valid_config.remove_only = True
     assert deploy_function(cognite_client_mock, valid_config) is None
     assert try_delete_mock.call_args_list == [call(cognite_client_mock, valid_config.external_id)]
