@@ -1,8 +1,11 @@
+import io
 import logging
 import os
 import time
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Union
+from zipfile import ZipFile
 
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
@@ -21,18 +24,19 @@ class FunctionDeployError(Exception):
     pass
 
 
-def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Optional[Function]:
+def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Function:
     t_end = time.time() + wait_time_sec
     while time.time() <= t_end:
-        function: Optional[Function] = client.functions.retrieve(external_id=external_id)
+        function = client.functions.retrieve(external_id=external_id)
         if function is not None:
             if function.status == "Ready":
+                logger.info(f"Deployment took {round(t_end-time.time(), 2)} seconds")
                 return function
             if function.status == "Failed":
                 raise FunctionDeployError(function.error["trace"])
         time.sleep(3)
 
-    return None
+    raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_sec} seconds.")
 
 
 def try_delete(client: CogniteClient, external_id: str):
@@ -42,9 +46,9 @@ def try_delete(client: CogniteClient, external_id: str):
 
 def try_delete_function(client: CogniteClient, external_id: str):
     if function_exist(client, external_id):  # I don't want to deal with mocks for now :(
-        func = client.functions.retrieve(external_id=external_id)
-        if func is not None:
-            for schedule in func.list_schedules():
+        function = client.functions.retrieve(external_id=external_id)
+        if function is not None:
+            for schedule in function.list_schedules():
                 # We want to delete ALL schedules since we don't keep state anywhere
                 # 1. Those we are going to recreate
                 # 2. Those removed permanently
@@ -62,43 +66,58 @@ def try_delete_function_file(client: CogniteClient, external_id: str):
         logger.info(f"Did delete file {external_id}.")
 
 
-def create_and_wait(client: CogniteClient, external_id: str, config: FunctionConfig):
-    logger.info(f"Will create function {external_id}")
+def create_function_and_wait(client: CogniteClient, file_id: int, config: FunctionConfig) -> Function:
+    external_id = config.external_id
+    logger.info(f"Trying to create function '{external_id}'...")
     client.functions.create(
         name=external_id,
         external_id=external_id,
-        folder=config.folder_path,
+        file_id=file_id,
         api_key=config.tenant.runtime_key,
         function_path=config.file,
     )
-    logging.info(f"Created function {external_id}. Waiting for deployment...")
-    wait_time_sec = config.deploy_wait_time_sec
-    deployed = await_function_deployment(client, external_id, wait_time_sec)
-    if deployed is None:
-        raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_sec} seconds.")
-    logging.info(f"Function {external_id} is deployed.")
-    return deployed
+    logging.info(f"Function '{external_id}' creating. Waiting for deployment...")
+    function = await_function_deployment(client, external_id, config.deploy_wait_time_sec)
+    logging.info(f"Function '{external_id}' deployed successfully!")
+    return function
+
+
+@contextmanager
+def temporary_chdir(path: Union[str, Path]):
+    old_path = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(old_path)
+
+
+def zip_and_upload_folder(client: CogniteClient, folder: str, name: str) -> int:
+    logger.info(f"Uploading code from '{folder}' to '{name}'")
+    buf = io.BytesIO()  # TempDir, who needs that?! :rocket:
+    with temporary_chdir(folder), ZipFile(buf, mode="a") as zf:
+        for root_dir, _, files in os.walk("."):
+            zf.write(root_dir)
+            for f in files:
+                zf.write(Path(root_dir) / f)
+
+    file_meta = client.files.upload_bytes(buf.getvalue(), name=name, external_id=name)
+    if file_meta.id is not None:
+        logger.info("Upload successful!")
+        return file_meta.id
+    raise FunctionDeployError(f"Failed to upload file ({name}) to CDF Files")
 
 
 @retry(exceptions=(FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
+    zip_file_name = get_file_name(config.external_id)  # Also external ID
     try:
-        return create_and_wait(client=client, external_id=config.external_id, config=config)
+        file_id = zip_and_upload_folder(client, config.folder_path, zip_file_name)
+        return create_function_and_wait(client=client, file_id=file_id, config=config)
+
     except (FunctionDeployError, FunctionDeployTimeout):
-        try_delete_function_file(client, get_file_name(config.external_id))
+        try_delete_function_file(client, zip_file_name)
         raise
-
-
-def deploy_function(client: CogniteClient, config: FunctionConfig) -> Optional[Function]:
-    try_delete(client, config.external_id)  # Delete old function and file
-
-    function = None
-    if not config.remove_only:
-        # Upload file and create function
-        function = upload_and_create(client, config)
-        logger.info(f"Successfully created and deployed function {config.external_id} with id {function.id}")
-
-    return function
 
 
 def function_exist(client: CogniteClient, external_id: str) -> bool:
@@ -110,4 +129,5 @@ def file_exists(client: CogniteClient, external_id: str) -> bool:
 
 
 def get_file_name(function_name: str) -> str:
-    return function_name.replace("/", "-") + ".zip"  # / not allowed in file names
+    # TODO: Kindly ask Cognite Functions to make this into a function...
+    return function_name.replace("/", "-") + ".zip"  # forward-slash is not allowed in file names

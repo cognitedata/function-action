@@ -1,8 +1,10 @@
+import warnings
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import yaml
 from cognite.client import CogniteClient
+from cognite.experimental import CogniteClient as ExpCogniteClient
 from crontab import CronSlices
 from pydantic import BaseModel, root_validator, validator
 
@@ -54,11 +56,13 @@ class TenantConfig(BaseModel):
         if project is None:
             return values
 
-        deployment_client = CogniteClient(
-            api_key=values.get(KEY_DEPLOYMENT_KEY),
-            base_url=values.get(KEY_CDF_BASE_URL),
-            client_name=CLIENT_NAME_FUNC_ACTION,
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            deployment_client = CogniteClient(
+                api_key=values.get(KEY_DEPLOYMENT_KEY),
+                base_url=values.get(KEY_CDF_BASE_URL),
+                client_name=CLIENT_NAME_FUNC_ACTION,
+            )
         if not deployment_client.login.status().logged_in:
             raise ValueError("Can't login with deployment credentials")
 
@@ -68,17 +72,28 @@ class TenantConfig(BaseModel):
                 f"Inferred project, {inferred_project}, from the provided deployment credentials "
                 f"does not match the project defined: {project}"
             )
-        runtime_client = CogniteClient(
-            api_key=values.get(KEY_RUNTIME_KEY),
-            base_url=values.get(KEY_CDF_BASE_URL),
-            client_name=CLIENT_NAME_FUNC_ACTION,
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            runtime_client = CogniteClient(
+                api_key=values.get(KEY_RUNTIME_KEY),
+                base_url=values.get(KEY_CDF_BASE_URL),
+                client_name=CLIENT_NAME_FUNC_ACTION,
+            )
         if not runtime_client.login.status().logged_in:
             raise ValueError("Can't login with runtime credentials")
 
         if runtime_client.login.status().project != project:
             raise ValueError(f"Provided runtime credentials doesn't match the project defined: {project}")
         return values
+
+
+def create_experimental_cognite_client(config: TenantConfig) -> ExpCogniteClient:
+    return ExpCogniteClient(
+        api_key=config.deployment_key,
+        project=config.cdf_project,
+        base_url=config.cdf_base_url,
+        client_name="function-action",
+    )
 
 
 class ScheduleConfig(BaseModel):
@@ -111,8 +126,9 @@ class FunctionConfig(BaseModel):
 
     @validator("schedule_file")
     def valid_schedule_file(cls, value):
-        if value is not None and not (value.endswith(".yml") or value.endswith(".yaml")):
-            raise ValueError(f"Invalid file name, must end with '.yml' or '.yaml', but got '{value}'")
+        allowed_file_suffixes = [".yml", ".yaml"]
+        if value is not None and Path(value).suffix not in allowed_file_suffixes:
+            raise ValueError(f"Invalid file suffix for '{value}', expected {' or '.join(allowed_file_suffixes)}")
         return value
 
     @root_validator()
@@ -121,7 +137,7 @@ class FunctionConfig(BaseModel):
         folder = values.get("folder_path")
         if file is not None and folder is not None:
             path = Path(folder) / Path(file)
-            if not (path.exists() and path.is_file()):
+            if not path.exists() or not path.is_file():
                 raise ValueError(f"Schedules file doesn't exist at path: {path.absolute()}")
         return values
 
