@@ -109,12 +109,5 @@ def file_exists(client: CogniteClient, external_id: str) -> bool:
     return client.files.retrieve(external_id=external_id) is not None
 
 
-def get_function_name(function_folder: Path, is_pr: bool) -> str:
-    github_repo = os.environ["GITHUB_REPOSITORY"]
-    github_head_ref = os.environ["GITHUB_HEAD_REF"]
-    full_path = Path(github_repo) / "" if function_folder == "." else function_folder
-    return full_path + (f"/{github_head_ref}" if is_pr else ":latest")
-
-
 def get_file_name(function_name: str) -> str:
     return function_name.replace("/", "-") + ".zip"  # / not allowed in file names
