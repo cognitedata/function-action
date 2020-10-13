@@ -1,5 +1,5 @@
 import contextlib
-from unittest.mock import call, patch, MagicMock
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 from cognite.client.data_classes import FileMetadata
