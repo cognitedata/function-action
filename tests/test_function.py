@@ -31,9 +31,7 @@ from function import (
         (["Not ready", "Failed"], 4, pytest.raises(FunctionDeployError)),
     ],
 )
-def test_await_function_deployment(
-    retrieve_status, wait_time_seconds, expectation, cognite_experimental_client_mock
-):
+def test_await_function_deployment(retrieve_status, wait_time_seconds, expectation, cognite_experimental_client_mock):
     responses = [Function(status=status, error={"trace": "some_error"}) for status in retrieve_status]
     cognite_experimental_client_mock.functions.retrieve.side_effect = responses
     with expectation:
@@ -94,7 +92,9 @@ def test_create_and_wait(await_function_deployment_mock, response, expectation, 
     mock_config.deploy_wait_time_sec = 1337
     with expectation:
         assert response == create_function_and_wait(cognite_experimental_client_mock, mock_external_id, mock_config)
-        assert await_function_deployment_mock.call_args_list == [call(cognite_experimental_client_mock, mock_external_id, 1337)]
+        assert await_function_deployment_mock.call_args_list == [
+            call(cognite_experimental_client_mock, mock_external_id, 1337)
+        ]
 
 
 @pytest.mark.parametrize("exception", [FunctionDeployTimeout, FunctionDeployError])
