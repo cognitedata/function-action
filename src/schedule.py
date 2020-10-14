@@ -9,12 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 def deploy_schedule(client: CogniteClient, function: Function, config: FunctionConfig):
-    schedules = function.list_schedules()
-
-    for schedule in schedules:
-        # we want to delete All schedules since we don't keep state anywhere and we want to wipe
-        # 1. those we are going to recreate
-        # 2. those removed permanently
+    for schedule in function.list_schedules():
+        # We want to delete ALL existing schedules since we don't keep state anywhere and we want to wipe:
+        # 1. Those we are going to recreate
+        # 2. Those removed permanently
         client.functions.schedules.delete(schedule.id)
 
     for schedule in config.schedules:
