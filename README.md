@@ -12,10 +12,10 @@ That API-key should have following CDF capabilities: `Files:READ`, `Files:WRITE`
 That API-key should have CDF capabilities required to run the code within the Function itself
  
 #### Optional
-1. `cdf_project`: Name of your CDF project/tenant. Inferred from your API-keys. Will be validated with API-keys if provided
+1. `cdf_project`: The name of your CDF project/tenant. Inferred from your API-keys. Will be validated with API-keys if provided
 2. `cdf_base_url`: Base url of your CDF tenant, defaults to _https://api.cognitedata.com_
-3. `function_file`: Name of the main function python file (defaults to `handler.py`)
-4. `function_secrets`: Name of Github secrets that holds the base64 encoded json dictionary with secrets.
+3. `function_file`: The name of file with main function (defaults to `handler.py`)
+4. `function_secrets`: The name of Github secrets that holds the base64 encoded json dictionary with secrets.
 5. `schedule_file`: File location with the list of schedules to be applied. see file format below. (defaults to None ie no schedules)
 6. `remove_only`: Checks that specified function is removed with all it's schedules. Deployment logic is skipped
 
