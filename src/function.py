@@ -75,6 +75,7 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
         file_id=file_id,
         api_key=config.tenant.runtime_key,
         function_path=config.file,
+        secrets=config.unpacked_secret,
     )
     logging.info(f"Function '{external_id}' creating. Waiting for deployment...")
     function = await_function_deployment(client, external_id, config.deploy_wait_time_sec)

@@ -42,6 +42,7 @@ def setup_config() -> FunctionConfig:
             runtime_key=os.getenv("INPUT_CDF_RUNTIME_CREDENTIALS"),
             cdf_base_url=os.getenv("INPUT_CDF_BASE_URL"),
         ),
+        secret=os.getenv("INPUT_FUNCTION_SECRETS") or None,
         schedule_file=os.getenv("INPUT_SCHEDULE_FILE") or None,
         remove_only=os.getenv("INPUT_REMOVE_ONLY", False),
     )

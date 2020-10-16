@@ -51,6 +51,7 @@ def valid_config(monkeypatch, loggedin_status):
                 runtime_key="FUNCTION_KEY",
                 cdf_base_url="https://api.cognitedata.com",
             ),
+            secret="eyJrZXkiOiJ2YWx1ZSJ9Cg==",
             schedule_file="configs/valid_schedule.yml",
             remove_only=False,
         )
