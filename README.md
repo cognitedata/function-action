@@ -15,7 +15,7 @@ That API-key should have CDF capabilities required to run the code within the Fu
 1. `cdf_project`: The name of your CDF project/tenant. Inferred from your API-keys. Will be validated with API-keys if provided
 2. `cdf_base_url`: Base url of your CDF tenant, defaults to _https://api.cognitedata.com_
 3. `function_file`: The name of file with main function (defaults to `handler.py`)
-4. `function_secrets`: The name of Github secrets that holds the base64 encoded json dictionary with secrets.
+4. `function_secrets`: The name of Github secrets that holds the base64 encoded json dictionary with secrets. (see secrets section)
 5. `schedule_file`: File location with the list of schedules to be applied. see file format below. (defaults to None ie no schedules)
 6. `remove_only`: Checks that specified function is removed with all it's schedules. Deployment logic is skipped
 
@@ -47,3 +47,18 @@ with:
     schedule_file: schedule-${{ github.ref }}.yml
 ```
 
+
+#### Function's secrtes
+
+When you implement your Cognite Function, you may need to have additional `secrets` to talk to 3rd party services like Slack.
+To achieve that one could create following dictionary:
+```json
+{ "slack_credentials": "secret credential" }
+``` 
+then go to to https://www.base64encode.org/ or SHELL to encode your dict into a string ()
+```shell script
+% echo '{ "slack_credentials": "secret credential" }' | base64 
+eyAic2xhY2tfY3JlZGVudGlhbHMiOiAic2VjcmV0IGNyZWRlbnRpYWwiIH0K
+```
+
+Take that string and store it into GitHub secret (COGNITE_FUNCTION_SECRETS from example above, f.ex) 
