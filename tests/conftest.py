@@ -41,7 +41,7 @@ def valid_config(monkeypatch, loggedin_status):
     monkeypatch.setenv("DEPLOYMENT_KEY", "DEPLOYMENT_KEY")
     with monkeypatch_cognite_client() as cdf_mock:
         cdf_mock.login.status.return_value = loggedin_status
-        return FunctionConfig(
+        return FunctionConfig(  # nosec
             external_id="test:hello_world_function/function",
             folder_path="tests",
             file="handler.py",
@@ -51,6 +51,7 @@ def valid_config(monkeypatch, loggedin_status):
                 runtime_key="FUNCTION_KEY",
                 cdf_base_url="https://api.cognitedata.com",
             ),
+            secret="eyJrZXkiOiJ2YWx1ZSJ9Cg==",  # this is a mock example of a valid key!
             schedule_file="configs/valid_schedule.yml",
             remove_only=False,
         )

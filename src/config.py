@@ -1,3 +1,5 @@
+import base64
+import json
 import warnings
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -109,11 +111,19 @@ class ScheduleConfig(BaseModel):
         return value
 
 
+def decode_and_parse(value) -> Optional[Dict]:
+    if value is None:
+        return None
+    decoded = base64.b64decode(value.encode())
+    return json.loads(decoded)
+
+
 class FunctionConfig(BaseModel):
     external_id: str
     folder_path: str
     file: str
     schedule_file: Optional[str]
+    secret: Optional[str]
     tenant: TenantConfig
     remove_only: bool
     deploy_wait_time_sec: int = 1200  # 20 minutes
@@ -129,6 +139,14 @@ class FunctionConfig(BaseModel):
         allowed_file_suffixes = [".yml", ".yaml"]
         if value is not None and Path(value).suffix not in allowed_file_suffixes:
             raise ValueError(f"Invalid file suffix for '{value}', expected {' or '.join(allowed_file_suffixes)}")
+        return value
+
+    @validator("secret")
+    def valid_secret(cls, value):
+        try:
+            decode_and_parse(value)
+        except Exception as e:
+            raise ValueError(f"Invalid secret, must be a valid base64 encoded json") from e
         return value
 
     @root_validator()
@@ -156,3 +174,7 @@ class FunctionConfig(BaseModel):
                 for col in collection
             ]
         return []
+
+    @property
+    def unpacked_secret(self) -> Optional[Dict]:
+        return decode_and_parse(self.secret)

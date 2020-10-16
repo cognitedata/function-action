@@ -11,6 +11,8 @@ base_path = Path(__file__).parent / "test_files"
 def test_read_config_whitespace_cron(valid_config):
     assert valid_config.schedules[0].cron == "* * * * *"
     assert valid_config.schedules[0].data.get("test_value") == 42
+    assert len(valid_config.unpacked_secret.keys()) == 1
+    assert valid_config.unpacked_secret.get("key") == "value"
 
 
 def test_cross_project_config(monkeypatch, loggedin_status):
@@ -30,6 +32,7 @@ def test_cross_project_config(monkeypatch, loggedin_status):
                     runtime_key="FUNCTION_KEY",
                     cdf_base_url="https://api.cognitedata.com",
                 ),
+                secrets="e30K",
                 schedules=[
                     ScheduleConfig(name=f"Schedule for test:hello_world_function #{i}", cron=s)
                     for i, s in enumerate(schedules)

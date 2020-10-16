@@ -25,6 +25,9 @@ inputs:
     description: Name of function file inside function folder, for instance, handler.py.
     default: handler.py
     required: false
+  function_secrets:
+    description: Base64 encoded string with json payload. Will be passed to a function's secrets as is.
+    required: false
   schedule_file:
     description: Relative path and name from (function_folder) of the file with schedules to be applied.
     required: false
