@@ -70,6 +70,6 @@ To decode and verify it, do:
 $ echo eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo= | python -m base64 -d
 {"slack-token": "123-my-secret-api-key"}
 ```
-Take that string and store it into GitHub secret (COGNITE_FUNCTION_SECRETS from example above, f.ex)
+Take that string and store it into GitHub secret (`COGNITE_FUNCTION_SECRETS`, like in the example above)
 
 Notes: _Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can supply at most 5 secrets_
