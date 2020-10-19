@@ -58,7 +58,7 @@ To achieve this, you could create the following dictionary:
 Use your terminal to encode your credentials into a string:
 ```shell script
 $ echo '{"slack-token": "123-my-secret-api-key"}' | base64 
-eyAic2xhY2tfY3JlZGVudGlhbHMiOiAic2VjcmV0IGNyZWRlbnRpYWwiIH0K
+eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo
 ```
 ...or use Python if you don't have `base64` available on your system:
 ```sh
