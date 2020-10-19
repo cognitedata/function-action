@@ -60,12 +60,13 @@ Use your terminal to encode your credentials into a string:
 $ echo '{"slack-token": "123-my-secret-api-key"}' | base64 
 eyAic2xhY2tfY3JlZGVudGlhbHMiOiAic2VjcmV0IGNyZWRlbnRpYWwiIH0K
 ```
-...or use Python if you don't have `base64` available in your system:
+...or use Python if you don't have `base64` available on your system:
 ```sh
 $ echo '{"slack-token": "123-my-secret-api-key"}' | python -m base64
 eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo=
 ```
 To decode and verify it, do:
+```sh
 $ echo eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo= | python -m base64 -d
 {"slack-token": "123-my-secret-api-key"}
 ```
