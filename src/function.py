@@ -109,7 +109,7 @@ def zip_and_upload_folder(client: CogniteClient, folder: str, name: str) -> int:
     raise FunctionDeployError(f"Failed to upload file ({name}) to CDF Files")
 
 
-@retry(exceptions=(FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
+@retry(exceptions=(IOError, FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)  # Also external ID
     try:
