@@ -40,7 +40,7 @@ def setup_config() -> FunctionConfig:
             cdf_project=os.getenv("INPUT_CDF_PROJECT") or None,
             deployment_key=os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS"),
             runtime_key=os.getenv("INPUT_CDF_RUNTIME_CREDENTIALS"),
-            cdf_base_url=os.getenv("INPUT_CDF_BASE_URL") or None,
+            cdf_base_url=os.getenv("INPUT_CDF_BASE_URL") or "https://api.cognitedata.com",
         ),
         secret=os.getenv("INPUT_FUNCTION_SECRETS") or None,
         schedule_file=os.getenv("INPUT_SCHEDULE_FILE") or None,
