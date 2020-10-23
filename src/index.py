@@ -37,10 +37,10 @@ def setup_config() -> FunctionConfig:
         folder_path=os.getenv("INPUT_FUNCTION_FOLDER", ""),
         file=os.getenv("INPUT_FUNCTION_FILE", "handler.py"),
         tenant=TenantConfig(
-            cdf_project=os.getenv("INPUT_CDF_PROJECT"),
+            cdf_project=os.getenv("INPUT_CDF_PROJECT") or None,
             deployment_key=os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS"),
             runtime_key=os.getenv("INPUT_CDF_RUNTIME_CREDENTIALS"),
-            cdf_base_url=os.getenv("INPUT_CDF_BASE_URL"),
+            cdf_base_url=os.getenv("INPUT_CDF_BASE_URL") or "https://api.cognitedata.com",
         ),
         secret=os.getenv("INPUT_FUNCTION_SECRETS") or None,
         schedule_file=os.getenv("INPUT_SCHEDULE_FILE") or None,
