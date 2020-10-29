@@ -4,7 +4,7 @@ import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 from zipfile import ZipFile
 
 from cognite.experimental import CogniteClient
@@ -75,7 +75,7 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
         file_id=file_id,
         api_key=config.tenant.runtime_key,
         function_path=config.file,
-        secrets=config.unpacked_secret,
+        secrets=config.unpacked_secrets,
     )
     logging.info(f"Function '{external_id}' creating. Waiting for deployment...")
     function = await_function_deployment(client, external_id, config.deploy_wait_time_sec)
@@ -93,14 +93,16 @@ def temporary_chdir(path: Union[str, Path]):
         os.chdir(old_path)
 
 
-def zip_and_upload_folder(client: CogniteClient, folder: str, name: str) -> int:
-    logger.info(f"Uploading code from '{folder}' to '{name}'")
+def zip_and_upload_folder(client: CogniteClient, code_directories: List[Path], name: str) -> int:
+    logger.info(f"Uploading code from {code_directories} to '{name}'")
     buf = io.BytesIO()  # TempDir, who needs that?! :rocket:
-    with temporary_chdir(folder), ZipFile(buf, mode="a") as zf:
-        for root_dir, _, files in os.walk("."):
-            zf.write(root_dir)
-            for f in files:
-                zf.write(Path(root_dir) / f)
+    with ZipFile(buf, mode="a") as zf:
+        for dir in code_directories:
+            with temporary_chdir(dir):
+                for root_dir, _, files in os.walk("."):
+                    zf.write(root_dir)
+                    for f in files:
+                        zf.write(Path(root_dir) / f)
 
     file_meta = client.files.upload_bytes(buf.getvalue(), name=name, external_id=name)
     if file_meta.id is not None:
@@ -113,7 +115,7 @@ def zip_and_upload_folder(client: CogniteClient, folder: str, name: str) -> int:
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)  # Also external ID
     try:
-        file_id = zip_and_upload_folder(client, config.folder_path, zip_file_name)
+        file_id = zip_and_upload_folder(client, config.code_directories, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
 
     except (FunctionDeployError, FunctionDeployTimeout):

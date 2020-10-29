@@ -126,6 +126,7 @@ class FunctionConfig(BaseModel):
     secret: Optional[str]
     tenant: TenantConfig
     remove_only: bool
+    common_folder_path: str = "common"
     deploy_wait_time_sec: int = 1200  # 20 minutes
 
     @validator("file")
@@ -146,7 +147,7 @@ class FunctionConfig(BaseModel):
         try:
             decode_and_parse(value)
         except Exception as e:
-            raise ValueError(f"Invalid secret, must be a valid base64 encoded json") from e
+            raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
         return value
 
     @root_validator()
@@ -176,5 +177,9 @@ class FunctionConfig(BaseModel):
         return []
 
     @property
-    def unpacked_secret(self) -> Optional[Dict]:
+    def unpacked_secrets(self) -> Optional[Dict]:
         return decode_and_parse(self.secret)
+
+    @property
+    def code_directories(self) -> List[Path]:
+        return [dir for dir in map(Path, (self.folder_path, self.common_folder_path)) if dir.is_dir()]
