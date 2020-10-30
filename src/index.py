@@ -35,6 +35,7 @@ def setup_config() -> FunctionConfig:
     return FunctionConfig(
         external_id=os.getenv("INPUT_FUNCTION_NAME", ""),
         folder_path=os.getenv("INPUT_FUNCTION_FOLDER", ""),
+        common_folder_path=os.getenv("INPUT_COMMON_FOLDER"),
         file=os.getenv("INPUT_FUNCTION_FILE", "handler.py"),
         tenant=TenantConfig(
             cdf_project=os.getenv("INPUT_CDF_PROJECT") or None,
@@ -44,7 +45,7 @@ def setup_config() -> FunctionConfig:
         ),
         secret=os.getenv("INPUT_FUNCTION_SECRETS") or None,
         schedule_file=os.getenv("INPUT_SCHEDULE_FILE") or None,
-        remove_only=os.getenv("INPUT_REMOVE_ONLY", False),
+        remove_only=os.getenv("INPUT_REMOVE_ONLY"),
     )
 
 

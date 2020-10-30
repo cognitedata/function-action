@@ -4,7 +4,7 @@ import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 from zipfile import ZipFile
 
 from cognite.experimental import CogniteClient
@@ -93,16 +93,23 @@ def temporary_chdir(path: Union[str, Path]):
         os.chdir(old_path)
 
 
-def zip_and_upload_folder(client: CogniteClient, code_directories: List[Path], name: str) -> int:
-    logger.info(f"Uploading code from {', '.join(map(str, code_directories))} to '{name}'")
+def _write_files_to_zip_buffer(zf: ZipFile, directory: Path):
+    for dirpath, _, files in os.walk(directory):
+        zf.write(dirpath)
+        for f in files:
+            zf.write(Path(dirpath) / f)
+
+
+def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: str) -> int:
+    logger.info(f"Uploading code from '{config.folder_path}' to '{name}'")
     buf = io.BytesIO()  # TempDir, who needs that?! :rocket:
     with ZipFile(buf, mode="a") as zf:
-        for dir in code_directories:
-            with temporary_chdir(dir):
-                for root_dir, _, files in os.walk("."):
-                    zf.write(root_dir)
-                    for f in files:
-                        zf.write(Path(root_dir) / f)
+        with temporary_chdir(config.folder_path):
+            _write_files_to_zip_buffer(zf, directory=".")
+
+        if config.common_folder_path is not None:
+            logger.info(f"Added common directory: '{config.common_folder_path}' to the function")
+            _write_files_to_zip_buffer(zf, directory=config.common_folder_path)
 
     file_meta = client.files.upload_bytes(buf.getvalue(), name=name, external_id=name)
     if file_meta.id is not None:

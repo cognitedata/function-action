@@ -1,4 +1,5 @@
 import base64
+import contextlib
 import json
 import warnings
 from pathlib import Path
@@ -120,13 +121,13 @@ def decode_and_parse(value) -> Optional[Dict]:
 
 class FunctionConfig(BaseModel):
     external_id: str
-    folder_path: str
+    folder_path: Path
+    common_folder_path: Optional[Path]
     file: str
     schedule_file: Optional[str]
     secret: Optional[str]
     tenant: TenantConfig
     remove_only: bool
-    common_folder_path: str = "common"
     deploy_wait_time_sec: int = 1200  # 20 minutes
 
     @validator("file")
@@ -149,6 +150,34 @@ class FunctionConfig(BaseModel):
         except Exception as e:
             raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
         return value
+
+    @validator("remove_only")
+    def valid_remove_only(cls, value):
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        elif isinstance(value, str):
+            return value.lower().strip() == "true"
+
+    @root_validator()
+    def check_folder_paths(cls, values):
+        def is_dir_validator(value):
+            if not isinstance(value, Path):
+                value = Path(value)
+            if not value.is_dir():
+                raise ValueError(f"Invalid folder value: '{value}', not a directory!")
+            return value
+
+        values["folder_path"] = is_dir_validator(values["folder_path"])
+        common_folder_path = values["common_folder_path"]
+        if common_folder_path is not None:
+            values["common_folder_path"] = is_dir_validator(common_folder_path)
+        else:
+            # Try default directory 'common/':
+            with contextlib.suppress(ValueError):
+                values["common_folder_path"] = is_dir_validator("common")
+        return values
 
     @root_validator()
     def check_schedules(cls, values):
@@ -179,7 +208,3 @@ class FunctionConfig(BaseModel):
     @property
     def unpacked_secrets(self) -> Optional[Dict]:
         return decode_and_parse(self.secret)
-
-    @property
-    def code_directories(self) -> List[Path]:
-        return [dir for dir in map(Path, (self.folder_path, self.common_folder_path)) if dir.is_dir()]
