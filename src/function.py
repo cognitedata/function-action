@@ -94,7 +94,7 @@ def temporary_chdir(path: Union[str, Path]):
 
 
 def zip_and_upload_folder(client: CogniteClient, code_directories: List[Path], name: str) -> int:
-    logger.info(f"Uploading code from {code_directories} to '{name}'")
+    logger.info(f"Uploading code from {', '.join(map(str, code_directories))} to '{name}'")
     buf = io.BytesIO()  # TempDir, who needs that?! :rocket:
     with ZipFile(buf, mode="a") as zf:
         for dir in code_directories:
