@@ -108,8 +108,9 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
             _write_files_to_zip_buffer(zf, directory=".")
 
         if config.common_folder_path is not None:
-            logger.info(f"Added common directory: '{config.common_folder_path}' to the function")
-            _write_files_to_zip_buffer(zf, directory=config.common_folder_path)
+            with temporary_chdir(config.common_folder_path.parent):  # Note .parent
+                logger.info(f"Added common directory: '{config.common_folder_path}' to the function")
+                _write_files_to_zip_buffer(zf, directory=config.common_folder_path)
 
     file_meta = client.files.upload_bytes(buf.getvalue(), name=name, external_id=name)
     if file_meta.id is not None:
@@ -122,7 +123,7 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)  # Also external ID
     try:
-        file_id = zip_and_upload_folder(client, config.code_directories, zip_file_name)
+        file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
 
     except (FunctionDeployError, FunctionDeployTimeout):
