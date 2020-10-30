@@ -49,6 +49,8 @@ class TenantConfig(BaseModel):
 
     @validator(KEY_CDF_BASE_URL, pre=True)
     def valid_cdf_base_url_key(cls, value):
+        if value is None:
+            return "https://api.cognitedata.com"
         if isinstance(value, str) and value.strip() == "":
             raise ValueError("CDF base url should not be an empty string.")
         return value
