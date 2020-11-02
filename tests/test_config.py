@@ -11,8 +11,8 @@ base_path = Path(__file__).parent / "test_files"
 def test_read_config_whitespace_cron(valid_config):
     assert valid_config.schedules[0].cron == "* * * * *"
     assert valid_config.schedules[0].data.get("test_value") == 42
-    assert len(valid_config.unpacked_secret.keys()) == 1
-    assert valid_config.unpacked_secret.get("key") == "value"
+    assert len(valid_config.unpacked_secrets.keys()) == 1
+    assert valid_config.unpacked_secrets.get("key") == "value"
 
 
 def test_cross_project_config(monkeypatch, loggedin_status):

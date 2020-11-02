@@ -1,4 +1,5 @@
 import base64
+import contextlib
 import json
 import warnings
 from pathlib import Path
@@ -48,6 +49,8 @@ class TenantConfig(BaseModel):
 
     @validator(KEY_CDF_BASE_URL, pre=True)
     def valid_cdf_base_url_key(cls, value):
+        if value is None:
+            return "https://api.cognitedata.com"
         if isinstance(value, str) and value.strip() == "":
             raise ValueError("CDF base url should not be an empty string.")
         return value
@@ -120,7 +123,8 @@ def decode_and_parse(value) -> Optional[Dict]:
 
 class FunctionConfig(BaseModel):
     external_id: str
-    folder_path: str
+    folder_path: Path
+    common_folder_path: Optional[Path]
     file: str
     schedule_file: Optional[str]
     secret: Optional[str]
@@ -146,8 +150,36 @@ class FunctionConfig(BaseModel):
         try:
             decode_and_parse(value)
         except Exception as e:
-            raise ValueError(f"Invalid secret, must be a valid base64 encoded json") from e
+            raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
         return value
+
+    @validator("remove_only")
+    def valid_remove_only(cls, value):
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        elif isinstance(value, str):
+            return value.lower().strip() == "true"
+
+    @root_validator()
+    def check_folder_paths(cls, values):
+        def is_dir_validator(value):
+            if not isinstance(value, Path):
+                value = Path(value)
+            if not value.is_dir():
+                raise ValueError(f"Invalid folder value: '{value}', not a directory!")
+            return value
+
+        values["folder_path"] = is_dir_validator(values["folder_path"])
+        common_folder_path = values["common_folder_path"]
+        if common_folder_path is not None:
+            values["common_folder_path"] = is_dir_validator(common_folder_path)
+        else:
+            # Try default directory 'common/':
+            with contextlib.suppress(ValueError):
+                values["common_folder_path"] = is_dir_validator("common")
+        return values
 
     @root_validator()
     def check_schedules(cls, values):
@@ -176,5 +208,5 @@ class FunctionConfig(BaseModel):
         return []
 
     @property
-    def unpacked_secret(self) -> Optional[Dict]:
+    def unpacked_secrets(self) -> Optional[Dict]:
         return decode_and_parse(self.secret)
