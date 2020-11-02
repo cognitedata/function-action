@@ -1,5 +1,5 @@
 # Deploy Cognite Function action
-This action deploys a Python function to Cognite Functions with a schedule defined.
+This action deploys a Python function to Cognite Functions, possibly with a schedule defined.
 
 ## Inputs
 ### Function metadata in Github Workflow
@@ -12,6 +12,7 @@ That API-key should have the following CDF capabilities: `Files:READ`, `Files:WR
 That API-key should have CDF capabilities required to run the code within the Function itself
  
 #### Optional
+1. `common_folder`:  The path to the folder containing code that is shared between all functions. Defaults to `common/`
 1. `cdf_project`: The name of your CDF project/tenant. Inferred from your API-keys. Will be validated with API-keys if provided
 2. `cdf_base_url`: Base url of your CDF tenant, defaults to _https://api.cognitedata.com_
 3. `function_file`: The name of the file with your main function (defaults to `handler.py`)
@@ -33,7 +34,7 @@ That API-key should have CDF capabilities required to run the code within the Fu
     something-else: 777
 ```
 
-#### Example usage
+### Example usage
 Workflow:
 ```yaml
 uses: cognitedata/function-action@v2
@@ -42,14 +43,36 @@ with:
     cdf_deployment_credentials: ${{ secrets.COGNITE_DEPLOYMENT_CREDENTIALS }}
     cdf_runtime_credentials: ${{ secrets.COGNITE_FUNCTION_CREDENTIALS }}
     function_file: function1
-    function_folder: ./functions
+    function_folder: functions
+    common_folder: utilities
     function_secrets: ${{ secrets.COGNITE_FUNCTION_SECRETS }}
     schedule_file: schedule-${{ github.ref }}.yml
 ```
 
+### Common folder
+A common use case is that you do not want to replicate utility code between all function folders. In order to accomodate this, we copy all the contents in the folder specified by `common_folder` into the functions we upload to Cognite Functions. If this is not specified, we check if `common/` exists in the root folder and if so, _we use it_.
 
-#### Function secrets
+#### Handling imports
+A typical setup looks like this:
+```
+├── common
+│   └── utils.py
+└── my_function
+    └── handler.py
+```
+The code we zip and send off to the FilesAPI will look like this:
+```
+├── common
+│   └── utils.py
+└── handler.py
+```
+This means your `handler.py`-file should do imports from `common/utils.py` like this:
+```py
+from common.utils import my_helper1, my_helper2
+import common.utils as utils  # alternative
+```
 
+### Function secrets
 When you implement your Cognite Function, you may need to have additional `secrets`, for example if you want to to talk to 3rd party services like Slack.
 To achieve this, you could create the following dictionary:
 ```json
@@ -72,4 +95,4 @@ $ echo eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo= | python -m base
 ```
 Take that string and store it into GitHub secret (`COGNITE_FUNCTION_SECRETS`, like in the example above)
 
-Notes: _Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can supply at most 5 secrets_
+Notes: _Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can supply at most 5 secrets in the dictionary (Cognite Functions requirement)_
