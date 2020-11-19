@@ -37,7 +37,7 @@ That API-key should have CDF capabilities required to run the code within the Fu
 ### Example usage
 Workflow:
 ```yaml
-uses: actions/checkout@v2actions/checkout@v2  # Do not forget to check out your own code!
+uses: actions/checkout@v2  # Do not forget to check out your own code!
 uses: cognitedata/function-action@v2
 with:
     function_name: my_hello_function_${{ github.ref }}
