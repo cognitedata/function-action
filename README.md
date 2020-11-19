@@ -35,19 +35,50 @@ That API-key should have CDF capabilities required to run the code within the Fu
 ```
 
 ### Example usage
-Workflow:
+Workflow to handle incoming Pull Requests:
 ```yaml
-uses: actions/checkout@v2  # Do not forget to check out your own code!
-uses: cognitedata/function-action@v2
-with:
-    function_name: my_hello_function_${{ github.ref }}
-    cdf_deployment_credentials: ${{ secrets.COGNITE_DEPLOYMENT_CREDENTIALS }}
-    cdf_runtime_credentials: ${{ secrets.COGNITE_FUNCTION_CREDENTIALS }}
-    function_file: function1
-    function_folder: functions
-    common_folder: utilities
-    function_secrets: ${{ secrets.COGNITE_FUNCTION_SECRETS }}
-    schedule_file: schedule-${{ github.ref }}.yml
+name: Validate Pull Request
+on:
+  pull_request:
+jobs:
+  sync:
+    name: Deploy PR to Cognite Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: cognitedata/function-action@v2
+	with:
+	    function_name: my_hello_function_${{ github.ref }}
+	    cdf_deployment_credentials: ${{ secrets.COGNITE_DEPLOYMENT_CREDENTIALS }}
+	    cdf_runtime_credentials: ${{ secrets.COGNITE_FUNCTION_CREDENTIALS }}
+	    function_file: function1
+	    function_folder: functions
+	    common_folder: utilities
+	    function_secrets: ${{ secrets.COGNITE_FUNCTION_SECRETS }}
+	    schedule_file: schedule-${{ github.ref }}.yml
+```
+Workflow to clean up Cognite Functions after PRs:
+```yaml
+name: Cleanup Functions for Pull Request
+on:
+  pull_request:
+    types: closed
+jobs:
+  (...)
+      - uses: cognitedata/function-action@v2
+	with:
+	    function_name: my_hello_function_${{ github.ref }}
+	    (...)
+	    remove_only: true  # This is the important part!
+```
+Workflow for merges to `master`:
+```yaml
+name: Deploy Function to Cognite Functions
+on:
+  push:
+    branches:
+      - master  # or main
+(...)
 ```
 
 ### Common folder
@@ -97,3 +128,4 @@ $ echo eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo= | python -m base
 Take that string and store it into GitHub secret (`COGNITE_FUNCTION_SECRETS`, like in the example above)
 
 Notes: _Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can supply at most 5 secrets in the dictionary (Cognite Functions requirement)_
+
