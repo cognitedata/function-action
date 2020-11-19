@@ -6,11 +6,11 @@ This action deploys a Python function to Cognite Functions, possibly with a sche
 #### Required
 1. `function_name`: Name of your function. That name will become an `external_id` and *must* be unique within your project
 2. `function_folder`: Parent folder of function code defaults to `.` (i.e. the root of your repo)
-3. `cdf_deployment_credentials`: Name of Github secrets that holds the API-key that shall be used to deploy the function. 
+3. `cdf_deployment_credentials`: Name of Github secrets that holds the API-key that shall be used to deploy the function.
 That API-key should have the following CDF capabilities: `Files:READ`, `Files:WRITE`, `Functions:READ`, `Functions:WRITE`
 4. `cdf_runtime_credentials`: Name of Github secrets that holds the API-key that the function will use when running
 That API-key should have CDF capabilities required to run the code within the Function itself
- 
+
 #### Optional
 1. `common_folder`:  The path to the folder containing code that is shared between all functions. Defaults to `common/`
 1. `cdf_project`: The name of your CDF project/tenant. Inferred from your API-keys. Will be validated with API-keys if provided
@@ -47,17 +47,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: cognitedata/function-action@v2
-	with:
-	    function_name: my_hello_function_${{ github.ref }}
-	    cdf_deployment_credentials: ${{ secrets.COGNITE_DEPLOYMENT_CREDENTIALS }}
-	    cdf_runtime_credentials: ${{ secrets.COGNITE_FUNCTION_CREDENTIALS }}
-	    function_file: function1
-	    function_folder: functions
-	    common_folder: utilities
-	    function_secrets: ${{ secrets.COGNITE_FUNCTION_SECRETS }}
-	    schedule_file: schedule-${{ github.ref }}.yml
+    with:
+        function_name: my_hello_function_${{ github.ref }}
+        cdf_deployment_credentials: ${{ secrets.COGNITE_DEPLOYMENT_CREDENTIALS }}
+        cdf_runtime_credentials: ${{ secrets.COGNITE_FUNCTION_CREDENTIALS }}
+        function_file: function1
+        function_folder: functions
+        common_folder: utilities
+        function_secrets: ${{ secrets.COGNITE_FUNCTION_SECRETS }}
+        schedule_file: schedule-${{ github.ref }}.yml
 ```
-Workflow to clean up Cognite Functions after PRs:
+Workflow for to clean up after PRs:
 ```yaml
 name: Cleanup Functions for Pull Request
 on:
@@ -66,10 +66,10 @@ on:
 jobs:
   (...)
       - uses: cognitedata/function-action@v2
-	with:
-	    function_name: my_hello_function_${{ github.ref }}
-	    (...)
-	    remove_only: true  # This is the important part!
+    with:
+        function_name: my_hello_function_${{ github.ref }}
+        (...)
+        remove_only: true  # This is the important part!
 ```
 Workflow for merges to `master`:
 ```yaml
@@ -109,10 +109,10 @@ When you implement your Cognite Function, you may need to have additional `secre
 To achieve this, you could create the following dictionary:
 ```json
 {"slack-token": "123-my-secret-api-key"}
-``` 
+```
 Use your terminal to encode your credentials into a string:
 ```shell script
-$ echo '{"slack-token": "123-my-secret-api-key"}' | base64 
+$ echo '{"slack-token": "123-my-secret-api-key"}' | base64
 eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo
 ```
 ...or use Python if you don't have `base64` available on your system:
@@ -128,4 +128,3 @@ $ echo eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo= | python -m base
 Take that string and store it into GitHub secret (`COGNITE_FUNCTION_SECRETS`, like in the example above)
 
 Notes: _Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can supply at most 5 secrets in the dictionary (Cognite Functions requirement)_
-
