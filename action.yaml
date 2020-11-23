@@ -36,6 +36,10 @@ inputs:
     description: Remove all artifacts and do not create new ones.
     default: false
     required: false
+  overwrite:
+    description: Overwrite the function if there is one with the same name.
+    default: false
+    required: false
 outputs:
   function_external_id: # id of output
     description: The External ID of the function output. Use this to do calls against the API!

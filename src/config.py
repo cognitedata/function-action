@@ -130,6 +130,7 @@ class FunctionConfig(BaseModel):
     secret: Optional[str]
     tenant: TenantConfig
     remove_only: bool
+    overwrite: bool
     deploy_wait_time_sec: int = 1200  # 20 minutes
 
     @validator("file")
