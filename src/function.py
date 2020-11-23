@@ -126,8 +126,7 @@ def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function
 
     if config.overwrite:
         # upsert was requested. delete schedules, function and files
-        try_delete_function(client=client, external_id=config.external_id)
-        try_delete_function_file(client=client, external_id=config.external_id)
+        try_delete(client=client, external_id=config.external_id)
 
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
