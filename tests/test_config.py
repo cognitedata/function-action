@@ -38,4 +38,5 @@ def test_cross_project_config(monkeypatch, loggedin_status):
                     for i, s in enumerate(schedules)
                 ],
                 remove_only=False,
+                overwrite=False,
             )

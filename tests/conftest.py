@@ -54,6 +54,7 @@ def valid_config(monkeypatch, loggedin_status):
             secret="eyJrZXkiOiJ2YWx1ZSJ9Cg==",  # this is a mock example of a valid key!
             schedule_file="configs/valid_schedule.yml",
             remove_only=False,
+            overwrite=False,
         )
 
 

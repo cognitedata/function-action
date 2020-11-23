@@ -46,6 +46,7 @@ def setup_config() -> FunctionConfig:
         secret=os.getenv("INPUT_FUNCTION_SECRETS") or None,
         schedule_file=os.getenv("INPUT_SCHEDULE_FILE") or None,
         remove_only=os.getenv("INPUT_REMOVE_ONLY"),
+        overwrite=os.getenv("INPUT_OVERWRITE"),
     )
 
 

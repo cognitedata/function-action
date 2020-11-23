@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Union
 from zipfile import ZipFile
 
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 from retry import retry
@@ -122,6 +123,11 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 @retry(exceptions=(IOError, FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)  # Also external ID
+
+    if config.overwrite:
+        # upsert was requested. delete schedules, function and files
+        try_delete(client=client, external_id=config.external_id)
+
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
