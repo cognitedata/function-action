@@ -40,6 +40,10 @@ inputs:
     description: Overwrite the function if there is one with the same name.
     default: false
     required: false
+  attach_schedules:
+    description: Attach schedules to the function (useful to turn off for PR-only deployments)
+    default: true
+    required: false
 outputs:
   function_external_id: # id of output
     description: The External ID of the function output. Use this to do calls against the API!

@@ -55,6 +55,7 @@ def valid_config(monkeypatch, loggedin_status):
             schedule_file="configs/valid_schedule.yml",
             remove_only=False,
             overwrite=False,
+            attach_schedules=True,
         )
 
 
