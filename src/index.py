@@ -32,6 +32,7 @@ def main(config: FunctionConfig) -> None:
 
 
 def setup_config() -> FunctionConfig:
+    # Note: The "or None" is there so that - if the empty string is passed - we convert to None.
     return FunctionConfig(
         external_id=os.getenv("INPUT_FUNCTION_NAME", ""),
         folder_path=os.getenv("INPUT_FUNCTION_FOLDER", ""),
@@ -45,6 +46,7 @@ def setup_config() -> FunctionConfig:
         ),
         secret=os.getenv("INPUT_FUNCTION_SECRETS") or None,
         schedule_file=os.getenv("INPUT_SCHEDULE_FILE") or None,
+        attach_schedules=os.getenv("INPUT_ATTACH_SCHEDULES"),
         remove_only=os.getenv("INPUT_REMOVE_ONLY"),
         overwrite=os.getenv("INPUT_OVERWRITE"),
     )

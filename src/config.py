@@ -129,8 +129,9 @@ class FunctionConfig(BaseModel):
     schedule_file: Optional[str]
     secret: Optional[str]
     tenant: TenantConfig
-    remove_only: bool
     overwrite: bool
+    remove_only: bool = False
+    attach_schedules: bool = True
     deploy_wait_time_sec: int = 1200  # 20 minutes
 
     @validator("file")
@@ -153,15 +154,6 @@ class FunctionConfig(BaseModel):
         except Exception as e:
             raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
         return value
-
-    @validator("remove_only")
-    def valid_remove_only(cls, value):
-        if value is None:
-            return False
-        if isinstance(value, bool):
-            return value
-        elif isinstance(value, str):
-            return value.lower().strip() == "true"
 
     @root_validator()
     def check_folder_paths(cls, values):
