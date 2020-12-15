@@ -29,7 +29,10 @@ inputs:
     description: Base64 encoded string with json payload. Will be passed to a function's secrets as is.
     required: false
   schedule_file:
-    description: Relative path and name from (function_folder) of the file with schedules to be applied.
+    description: |
+        Relative path and name from (function_folder) of the file with schedules to be attached.
+        Not passing this parameter, or passing "" (empty), no schedules will be attached.
+        Note: On all deployments, all existing schedules are deleted (and possibly recreated)!
     required: false
     default: ""
   remove_only:

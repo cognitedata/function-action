@@ -32,6 +32,7 @@ def main(config: FunctionConfig) -> None:
 
 
 def setup_config() -> FunctionConfig:
+    # Note: The "or None" is there so that - if the empty string is passed - we pass None instead.
     return FunctionConfig(
         external_id=os.getenv("INPUT_FUNCTION_NAME", ""),
         folder_path=os.getenv("INPUT_FUNCTION_FOLDER", ""),
