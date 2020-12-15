@@ -34,7 +34,10 @@ def get_data_set_id_from_external_id(client: CogniteClient, ext_id: str) -> int:
     """
     if (ds := client.data_sets.retrieve(external_id=ext_id)) :
         return ds.id
-    raise CogniteNotFoundError(f"Data set external ID: '{ext_id}' not found -OR- you don't have access to it!")
+    raise CogniteNotFoundError(
+        f"Data set external ID: '{ext_id}' not found -OR- you don't have the required capabilities scoped to that "
+        "dataset: OWNER (for write-protected) or WRITE (for non-write-protected)."
+    )
 
 
 def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Function:
