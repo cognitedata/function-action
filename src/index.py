@@ -28,7 +28,7 @@ def main(config: FunctionConfig) -> None:
     if config.attach_schedules:
         deploy_schedule(client, function, config)
     else:
-        logger.info(f"Skipped attach schedules step!")
+        logger.info("Skipped step of attaching schedules!")
 
     # Return output parameter:
     print(f"::set-output name=function_external_id::{function.external_id}")
