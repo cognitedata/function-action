@@ -2,7 +2,7 @@
 name = "deploy-function-action"
 version = "0.1.0"
 description = ""
-authors = ["Magnus Moan <magnus.moan@cognite.com>"]
+authors = ["Magnus Moan <magnus.moan@cognite.com>", "Håkon Treider <hakon.treider@cognite.com>", "Pavel Zubarev <pavel.zubarev@cognite.com>"]
 
 [tool.black]
 line-length = 120
