@@ -35,6 +35,10 @@ inputs:
         Note: On all deployments, all existing schedules are deleted (and possibly recreated)!
     required: false
     default: ""
+  data_set_external_id:
+    description: Data set external ID to use for the function-associated file (zipped code folder).
+    default: ""
+    required: false
   remove_only:
     description: Remove all artifacts and do not create new ones.
     default: false

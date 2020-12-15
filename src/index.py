@@ -38,6 +38,7 @@ def setup_config() -> FunctionConfig:
         folder_path=os.getenv("INPUT_FUNCTION_FOLDER", ""),
         common_folder_path=os.getenv("INPUT_COMMON_FOLDER"),
         file=os.getenv("INPUT_FUNCTION_FILE", "handler.py"),
+        data_set_external_id=os.getenv("INPUT_DATA_SET_EXTERNAL_ID") or None,
         tenant=TenantConfig(
             cdf_project=os.getenv("INPUT_CDF_PROJECT") or None,
             deployment_key=os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS"),

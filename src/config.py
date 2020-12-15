@@ -127,6 +127,7 @@ class FunctionConfig(BaseModel):
     common_folder_path: Optional[Path]
     file: str
     schedule_file: Optional[str]
+    data_set_external_id: Optional[str]
     secret: Optional[str]
     tenant: TenantConfig
     overwrite: bool
