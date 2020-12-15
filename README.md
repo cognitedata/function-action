@@ -20,7 +20,6 @@ That API-key should have CDF capabilities required to run the code within the Fu
 5. `schedule_file`: File location with the list of schedules to be applied, see the file format below (defaults to None i.e. no schedules).
 6. `remove_only`: Checks that specified function is removed with all its schedules. Deployment logic is skipped
 7. `overwrite`: Don't fail the action if function already exists and overwrite it
-8. `attach_schedules`: Schedules, if given, are attached to their respective function, unless this is passed as False. Useful for PR-only deployments.
 
 ### Schedule file format
 ```yaml
