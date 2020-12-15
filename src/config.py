@@ -131,7 +131,6 @@ class FunctionConfig(BaseModel):
     tenant: TenantConfig
     overwrite: bool
     remove_only: bool = False
-    attach_schedules: bool = True
     deploy_wait_time_sec: int = 1200  # 20 minutes
 
     @validator("file")

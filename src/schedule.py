@@ -14,12 +14,19 @@ def delete_all_schedules_attached(client: CogniteClient, function: Function):
       1. Those we are going to recreate
       2. Those removed permanently
     """
-    for schedule in function.list_schedules():  # TODO: Delete list of ids?
-        client.functions.schedules.delete(schedule.id)
+    schedule_ids = [schedule.id for schedule in function.list_schedules()]
+    if schedule_ids:
+        for sid in schedule_ids:  # TODO: Experimental SDK does not support "delete multiple"
+            client.functions.schedules.delete(sid)
+        logger.info(f"Deleted all ({len(schedule_ids)}) existing schedule(s)!")
 
 
 def deploy_schedule(client: CogniteClient, function: Function, config: FunctionConfig):
     delete_all_schedules_attached(client, function)
+
+    if not config.schedules:
+        logger.info("Skipped step of attaching schedules!")
+        return
 
     for schedule in config.schedules:
         client.functions.schedules.create(

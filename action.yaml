@@ -29,7 +29,10 @@ inputs:
     description: Base64 encoded string with json payload. Will be passed to a function's secrets as is.
     required: false
   schedule_file:
-    description: Relative path and name from (function_folder) of the file with schedules to be applied.
+    description: |
+        Relative path and name from (function_folder) of the file with schedules to be attached.
+        Not passing this parameter, or passing "" (empty), no schedules will be attached.
+        Note: On all deployments, all existing schedules are deleted (and possibly recreated)!
     required: false
     default: ""
   remove_only:
@@ -39,10 +42,6 @@ inputs:
   overwrite:
     description: Overwrite the function if there is one with the same name.
     default: false
-    required: false
-  attach_schedules:
-    description: Attach schedules to the function (useful to turn off for PR-only deployments)
-    default: true
     required: false
 outputs:
   function_external_id: # id of output
