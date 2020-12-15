@@ -25,7 +25,10 @@ def main(config: FunctionConfig) -> None:
     # Zip files, upload to Files and create CogFunc:
     function = upload_and_create(client, config)
     logger.info(f"Successfully created and deployed function {config.external_id} with id {function.id}")
-    deploy_schedule(client, function, config)
+    if config.attach_schedules:
+        deploy_schedule(client, function, config)
+    else:
+        logger.info(f"Skipped attach schedules step!")
 
     # Return output parameter:
     print(f"::set-output name=function_external_id::{function.external_id}")

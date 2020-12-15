@@ -12,6 +12,7 @@ from cognite.experimental.data_classes import Function
 from retry import retry
 
 from config import FunctionConfig
+from schedule import delete_all_schedules_attached
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +49,7 @@ def try_delete_function(client: CogniteClient, external_id: str):
     if function_exist(client, external_id):  # I don't want to deal with mocks for now :(
         function = client.functions.retrieve(external_id=external_id)
         if function is not None:
-            for schedule in function.list_schedules():
-                # We want to delete ALL schedules since we don't keep state anywhere
-                # 1. Those we are going to recreate
-                # 2. Those removed permanently
-                client.functions.schedules.delete(schedule.id)
+            delete_all_schedules_attached(client, function)
 
             logger.info(f"Found existing function '{external_id}'. Deleting ...")
             client.functions.delete(external_id=external_id)
