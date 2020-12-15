@@ -32,11 +32,9 @@ def get_data_set_id_from_external_id(client: CogniteClient, ext_id: str) -> int:
     of external IDs in this Github action... but since the SDK (cur 2.10.3)
     does not support data set external ID for FilesAPI, we need lookup...
     """
-    if (ds := client.data_sets.retrieve(external_id=ext_id)):
+    if (ds := client.data_sets.retrieve(external_id=ext_id)) :
         return ds.id
-    raise CogniteNotFoundError(
-        f"Data set external ID: '{ext_id}' not found -OR- you don't have access to it!"
-    )
+    raise CogniteNotFoundError(f"Data set external ID: '{ext_id}' not found -OR- you don't have access to it!")
 
 
 def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Function:
