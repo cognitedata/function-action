@@ -20,6 +20,6 @@ RUN pip3 install --target=/app -r /requirements.txt --upgrade
 # A distroless container image with Python and some basics like SSL certificates
 # https://github.com/GoogleContainerTools/distroless
 # FROM gcr.io/distroless/python3.8-debian10
-COPY --from=builder /app /app
+# COPY --from=builder /app /app
 ENV PYTHONPATH /app
 CMD ["/app/index.py"]
