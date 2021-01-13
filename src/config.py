@@ -193,10 +193,10 @@ class FunctionConfig(BaseModel):
             return [
                 ScheduleConfig(
                     cron=col.get("cron"),
-                    name=self.external_id + ":" + col.get("name", "undefined"),
+                    name=self.external_id + ":" + col.get("name", f"undefined-{i}"),
                     data=col.get("data", {}),
                 )
-                for col in collection
+                for i, col in enumerate(collection)
             ]
         return []
 
