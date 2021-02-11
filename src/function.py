@@ -80,17 +80,21 @@ def try_delete_function_file(client: CogniteClient, external_id: str):
 
 
 def create_function_and_wait(client: CogniteClient, file_id: int, config: FunctionConfig) -> Function:
-    external_id = config.external_id
+    external_id, secrets = config.external_id, config.unpacked_secrets
     logger.info(f"Trying to create function '{external_id}'...")
+    if secrets:
+        logger.info(f"Adding {len(secrets)} extra secrets to the function '{external_id}'")
+    else:
+        logger.info(f"No extra secrets added to function '{external_id}'")
     client.functions.create(
         name=external_id,
         external_id=external_id,
         file_id=file_id,
         api_key=config.tenant.runtime_key,
         function_path=config.file,
-        secrets=config.unpacked_secrets,
+        secrets=secrets,
     )
-    logging.info(f"Function '{external_id}' creating. Waiting for deployment...")
+    logging.info(f"Function '{external_id}' created. Waiting for deployment...")
     function = await_function_deployment(client, external_id, config.deploy_wait_time_sec)
     logging.info(f"Function '{external_id}' deployed successfully!")
     return function
