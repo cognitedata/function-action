@@ -159,13 +159,13 @@ class FunctionConfig(BaseModel):
 
     @validator("cpu")
     def valid_cpu_range(cls, value):
-        if not 0.1 <= value <= 0.6:
+        if not (0.1 <= value <= 0.6):
             raise ValueError(f"CPU input should be in range of 0.1 and 0.6. It was set to '{value}'")
         return value
     
     @validator("memory")
     def valid_memory_range(cls, value):
-        if not 0.1 <= value <= 2.5:
+        if not (0.1 <= value <= 2.5):
             raise ValueError(f"Memory input should be in range of 0.1 and 2.5. It was set to '{value}'")
         return value
 
