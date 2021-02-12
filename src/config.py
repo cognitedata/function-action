@@ -133,6 +133,8 @@ class FunctionConfig(BaseModel):
     overwrite: bool
     remove_only: bool = False
     deploy_wait_time_sec: int = 1200  # 20 minutes
+    cpu: float = 0.25
+    memory: float = 1.0
 
     @validator("file")
     def valid_file(cls, value):
@@ -153,6 +155,18 @@ class FunctionConfig(BaseModel):
             decode_and_parse(value)
         except Exception as e:
             raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
+        return value
+
+    @validator("cpu")
+    def valid_cpu_range(cls, value):
+        if not 0.1 <= value <= 0.6:
+            raise ValueError(f"CPU input should be in range of 0.1 and 0.6. It was set to '{value}'")
+        return value
+    
+    @validator("memory")
+    def valid_memory_range(cls, value):
+        if not 0.1 <= value <= 2.5:
+            raise ValueError(f"Memory input should be in range of 0.1 and 2.5. It was set to '{value}'")
         return value
 
     @root_validator()

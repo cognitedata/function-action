@@ -21,6 +21,8 @@ That API-key should have CDF capabilities required to run the code within the Fu
 6. `remove_only`: Checks that specified function is removed with all its schedules. Deployment logic is skipped
 7. `overwrite`: Don't fail the action if function already exists and overwrite it
 8. `data_set_external_id`: [recommended] Data set external ID to use for the function-associated file (zipped code folder).
+9. `cpu`: Set number of CPU cores per function. Defaults to 0.25 and ranges from 0.1 to 0.6.
+10. `memory`: Set memory per function measured in GB. Defaults to 1 and ranges from 0.1 to 2.5.
 
 ### Schedule file format
 ```yaml
