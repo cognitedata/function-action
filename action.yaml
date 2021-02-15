@@ -48,7 +48,7 @@ inputs:
     default: false
     required: false
   cpu:
-    description: Set number of CPU cores per function, e.g. 0.8.
+    description: Set number of CPU cores per function, e.g. 0.5.
     required: false
   memory:
     description: Set memory per function measured in GB, e.g. 0.8.
