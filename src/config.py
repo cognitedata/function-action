@@ -205,3 +205,11 @@ class FunctionConfig(BaseModel):
     @property
     def unpacked_secrets(self) -> Optional[Dict]:
         return decode_and_parse(self.secret)
+
+    def get_memory_and_cpu(self):
+        kw = {}
+        if self.memory is not None:
+            kw["memory"] = self.memory
+        if self.cpu is not None:
+            kw["cpu"] = self.cpu
+        return kw
