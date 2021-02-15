@@ -133,8 +133,8 @@ class FunctionConfig(BaseModel):
     overwrite: bool
     remove_only: bool = False
     deploy_wait_time_sec: int = 1200  # 20 minutes
-    cpu: float = 0.25
-    memory: float = 1.0
+    cpu: Optional[float]
+    memory: Optional[float]
 
     @validator("file")
     def valid_file(cls, value):
@@ -159,13 +159,13 @@ class FunctionConfig(BaseModel):
 
     @validator("cpu")
     def valid_cpu_input(cls, value):
-        if not isinstance(value, float):
+        if value is not None and not isinstance(value, float):
             raise ValueError(f"Invalid CPU input: '{value}', should be of type 'float'")
         return value
 
     @validator("memory")
     def valid_memory_input(cls, value):
-        if not isinstance(value, float):
+        if value is not None and not isinstance(value, float):
             raise ValueError(f"Invalid Memory input: '{value}', should be of type 'float'")
         return value
 

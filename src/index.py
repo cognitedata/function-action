@@ -49,8 +49,8 @@ def setup_config() -> FunctionConfig:
         schedule_file=os.getenv("INPUT_SCHEDULE_FILE") or None,
         remove_only=os.getenv("INPUT_REMOVE_ONLY"),
         overwrite=os.getenv("INPUT_OVERWRITE"),
-        cpu=os.getenv("INPUT_CPU"),
-        memory=os.getenv("INPUT_MEMORY"),
+        cpu=os.getenv("INPUT_CPU") or None,
+        memory=os.getenv("INPUT_MEMORY") or None,
     )
 
 
