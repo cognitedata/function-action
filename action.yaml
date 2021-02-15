@@ -48,12 +48,10 @@ inputs:
     default: false
     required: false
   cpu:
-    description: Set number of CPU cores per function. Defaults to 0.25 and ranges from 0.1 to 0.6.
-    default: 0.25
+    description: Set number of CPU cores per function.
     required: false
   memory:
-    description: Set memory per function measured in GB. Defaults to 1 and ranges from 0.1 to 2.5.
-    default: 1.0
+    description: Set memory per function measured in GB.
     required: false
 outputs:
   function_external_id: # id of output
