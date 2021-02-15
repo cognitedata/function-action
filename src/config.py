@@ -157,18 +157,6 @@ class FunctionConfig(BaseModel):
             raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
         return value
 
-    @validator("cpu")
-    def valid_cpu_input(cls, value):
-        if value is not None and not isinstance(value, float):
-            raise ValueError(f"Invalid CPU input: '{value}', should be of type 'float'")
-        return value
-
-    @validator("memory")
-    def valid_memory_input(cls, value):
-        if value is not None and not isinstance(value, float):
-            raise ValueError(f"Invalid Memory input: '{value}', should be of type 'float'")
-        return value
-
     @root_validator()
     def check_folder_paths(cls, values):
         def is_dir_validator(value):
