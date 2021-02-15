@@ -47,6 +47,12 @@ inputs:
     description: Overwrite the function if there is one with the same name.
     default: false
     required: false
+  cpu:
+    description: Set number of CPU cores per function, e.g. 0.5.
+    required: false
+  memory:
+    description: Set memory per function measured in GB, e.g. 0.8.
+    required: false
 outputs:
   function_external_id: # id of output
     description: The External ID of the function output. Use this to do calls against the API!

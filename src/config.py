@@ -133,6 +133,8 @@ class FunctionConfig(BaseModel):
     overwrite: bool
     remove_only: bool = False
     deploy_wait_time_sec: int = 1200  # 20 minutes
+    cpu: Optional[float]
+    memory: Optional[float]
 
     @validator("file")
     def valid_file(cls, value):
