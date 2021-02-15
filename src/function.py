@@ -93,8 +93,7 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
         api_key=config.tenant.runtime_key,
         function_path=config.file,
         secrets=secrets,
-        memory=config.memory,
-        cpu=config.cpu,
+        **config.get_memory_and_cpu(),  # Do not pass kwargs if mem/cpu is not set
     )
     logging.info(f"Function '{external_id}' created. Waiting for deployment...")
     function = await_function_deployment(client, external_id, config.deploy_wait_time_sec)
