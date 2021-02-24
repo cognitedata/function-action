@@ -7,9 +7,11 @@ from schedule import deploy_schedule
 
 def test_deploy_schedule(cognite_experimental_client_mock, valid_config):
     schedules = [
-        FunctionSchedule(id=1, name=valid_config.schedules[0].name),
-        FunctionSchedule(id=2, name="random schedule"),
+        FunctionSchedule(id=1, name=valid_config.schedules[0].name, function_external_id=valid_config.external_id),
+        FunctionSchedule(id=2, name="random schedule", function_external_id=valid_config.external_id),
     ]
+
+    cognite_experimental_client_mock.functions.schedules.list.return_value = schedules
 
     function_mock = MagicMock()
     function_mock.list_schedules.return_value = schedules
