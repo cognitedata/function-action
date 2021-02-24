@@ -5,7 +5,7 @@ inputs:
     description: Name of function. Used as an external_id for created function. Should be unique within cdf project.
     required: true
   function_folder:
-    description: Path to the folder where source code for the function(s) is/are located.
+    description: Path to the folder where the source code for the function(s) is/are located.
     required: true
   cdf_deployment_credentials:
     description: CDF API key that is provided to the deployed function.
@@ -14,9 +14,8 @@ inputs:
     description: CDF API key that will be used when function is running.
     required: true
   cdf_project:
-    description: The name of your cdf project. Will be checked that it matches required credentials.
+    description: The name of your cdf project. Will be checked that it matches required credentials if given.
     required: false
-    default: ""
   cdf_base_url:
     description: Base url of your cdf project.
     default: https://api.cognitedata.com
@@ -34,10 +33,8 @@ inputs:
         Not passing this parameter, or passing "" (empty), no schedules will be attached.
         Note: On all deployments, all existing schedules are deleted (and possibly recreated)!
     required: false
-    default: ""
   data_set_external_id:
     description: Data set external ID to use for the function-associated file (zipped code folder).
-    default: ""
     required: false
   common_folder:
     description: Directory which contains code used by multiple functions.
