@@ -67,6 +67,7 @@ class TenantConfig(BaseModel):
                 api_key=values.get(KEY_DEPLOYMENT_KEY),
                 base_url=values.get(KEY_CDF_BASE_URL),
                 client_name=CLIENT_NAME_FUNC_ACTION,
+                debug=True,
             )
         if not deployment_client.login.status().logged_in:
             raise ValueError("Can't login with deployment credentials")
@@ -83,6 +84,7 @@ class TenantConfig(BaseModel):
                 api_key=values.get(KEY_RUNTIME_KEY),
                 base_url=values.get(KEY_CDF_BASE_URL),
                 client_name=CLIENT_NAME_FUNC_ACTION,
+                debug=True,
             )
         if not runtime_client.login.status().logged_in:
             raise ValueError("Can't login with runtime credentials")
@@ -98,6 +100,7 @@ def create_experimental_cognite_client(config: TenantConfig) -> ExpCogniteClient
         project=config.cdf_project,
         base_url=config.cdf_base_url,
         client_name="function-action",
+        debug=True,
     )
 
 
