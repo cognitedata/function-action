@@ -51,6 +51,7 @@ def setup_config() -> FunctionConfig:
         overwrite=os.getenv("INPUT_OVERWRITE"),
         cpu=os.getenv("INPUT_CPU") or None,
         memory=os.getenv("INPUT_MEMORY") or None,
+        owner=os.getenv("INPUT_OWNER") or None,
     )
 
 

@@ -135,6 +135,7 @@ class FunctionConfig(BaseModel):
     deploy_wait_time_sec: int = 1200  # 20 minutes
     cpu: Optional[float]
     memory: Optional[float]
+    owner: Optional[str]
 
     @validator("file")
     def valid_file(cls, value):
@@ -155,6 +156,12 @@ class FunctionConfig(BaseModel):
             decode_and_parse(value)
         except Exception as e:
             raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
+        return value
+
+    @validator("owner")
+    def valid_owner_string_len(cls, value):
+        if value is not None and len(value) > 128:
+            raise ValueError("Invalid owner input, must be <= 128 characters")
         return value
 
     @root_validator()

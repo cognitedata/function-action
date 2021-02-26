@@ -53,6 +53,9 @@ inputs:
   memory:
     description: Set memory per function measured in GB, e.g. 0.8.
     required: false
+  owner:
+    description: Set owner of a function, e.g. "forge".
+    required: false
 outputs:
   function_external_id: # id of output
     description: The External ID of the function output. Use this to do calls against the API!
