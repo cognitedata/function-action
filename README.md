@@ -23,7 +23,7 @@ That API-key should have CDF capabilities required to run the code within the Fu
 8. `data_set_external_id`: [recommended] Data set external ID to use for the function-associated file (zipped code folder).
 9. `cpu`: Set number of CPU cores per function. See defaults and allowed values in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
 10. `memory`: Set memory per function measured in GB. See defaults and allowed values in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
-11. `owner`: Used to specify a function's owner. By default `deploy-functions` template propagates github repository name into this field. See allowed number of characters in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions)
+11. `owner`: Used to specify a function's owner. See allowed number of characters in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions)
 
 ### Schedule file format
 ```yaml
