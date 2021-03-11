@@ -83,7 +83,7 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
     external_id, secrets = config.external_id, config.unpacked_secrets
     logger.info(f"Trying to create function '{external_id}'...")
     if secrets:
-        logger.info(f"Adding {len(secrets)} extra secrets to the function '{external_id}'")
+        logger.info(f"Adding {len(secrets)} extra secret(s) to the function '{external_id}'")
     else:
         logger.info(f"No extra secrets added to function '{external_id}'")
     client.functions.create(
