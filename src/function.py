@@ -13,7 +13,7 @@ from cognite.experimental.data_classes import Function
 from retry import retry
 
 from config import FunctionConfig
-from schedule import delete_all_schedules_attached
+from schedule import delete_all_schedules_for_ext_id
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ def try_delete(client: CogniteClient, external_id: str):
 
 def try_delete_function(client: CogniteClient, external_id: str):
     # Schedules live on when functions die, so we always clean up:
-    delete_all_schedules_attached(client, external_id)
+    delete_all_schedules_for_ext_id(client, external_id)
 
     function = client.functions.retrieve(external_id=external_id)
     if function is not None:

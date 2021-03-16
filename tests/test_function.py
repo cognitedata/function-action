@@ -11,7 +11,6 @@ from function import (
     await_function_deployment,
     create_function_and_wait,
     file_exists,
-    function_exist,
     get_file_name,
     try_delete,
     try_delete_function,
@@ -55,13 +54,11 @@ def test_try_delete(
 
 
 @pytest.mark.parametrize(
-    "exists, expected_delete_calls",
-    [(True, [call(external_id="some id")]), (False, [])],
+    "function, expected_delete_calls",
+    [(Function(id=123), [call(external_id="some id")]), (None, [])],
 )
-@patch("function.function_exist")
-def test_try_delete_function(functions_exist_mock, exists, expected_delete_calls, cognite_experimental_client_mock):
-    functions_exist_mock.return_value = exists
-
+def test_try_delete_function(function, expected_delete_calls, cognite_experimental_client_mock):
+    cognite_experimental_client_mock.functions.retrieve.return_value = function
     try_delete_function(cognite_experimental_client_mock, "some id")
     assert cognite_experimental_client_mock.functions.delete.call_args_list == expected_delete_calls
 
@@ -111,12 +108,6 @@ def test_upload_and_create_exception(
 
     with pytest.raises(exception):
         upload_and_create(cognite_client_mock, valid_config)
-
-
-@pytest.mark.parametrize("response, expected", [(Function(), True), (None, False)])
-def test_function_exist(response, expected, cognite_experimental_client_mock):
-    cognite_experimental_client_mock.functions.retrieve.return_value = response
-    assert function_exist(cognite_experimental_client_mock, "") == expected
 
 
 @pytest.mark.parametrize("response, expected", [(FileMetadata(), True), (None, False)])
