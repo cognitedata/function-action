@@ -62,14 +62,14 @@ def try_delete(client: CogniteClient, external_id: str):
 
 
 def try_delete_function(client: CogniteClient, external_id: str):
-    if function_exist(client, external_id):  # I don't want to deal with mocks for now :(
-        function = client.functions.retrieve(external_id=external_id)
-        if function is not None:
-            delete_all_schedules_attached(client, function)
+    # Schedules live on when functions die, so we always clean up:
+    delete_all_schedules_attached(client, external_id)
 
-            logger.info(f"Found existing function '{external_id}'. Deleting ...")
-            client.functions.delete(external_id=external_id)
-            logger.info(f"Delete of function '{external_id}' successful!")
+    function = client.functions.retrieve(external_id=external_id)
+    if function is not None:
+        logger.info(f"Found existing function '{external_id}'. Deleting ...")
+        client.functions.delete(external_id=external_id)
+        logger.info(f"Delete of function '{external_id}' successful!")
 
 
 def try_delete_function_file(client: CogniteClient, external_id: str):
@@ -158,17 +158,13 @@ def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function
     except CogniteAPIError as e:
         if "Function externalId duplicated" in e.message:
             # Function was registered, but an unknown error occurred. Delete and trigger retry:
-            try_delete(client, config.external_id)
+            try_delete_function(client, config.external_id)
             raise FunctionDeployError(e.message) from None
         raise  # We don't want to trigger retry for unknown problems
 
     except (FunctionDeployError, FunctionDeployTimeout):
         try_delete_function_file(client, zip_file_name)
         raise
-
-
-def function_exist(client: CogniteClient, external_id: str) -> bool:
-    return client.functions.retrieve(external_id=external_id) is not None
 
 
 def file_exists(client: CogniteClient, external_id: str) -> bool:
