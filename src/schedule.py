@@ -8,27 +8,23 @@ from config import FunctionConfig
 logger = logging.getLogger(__name__)
 
 
-def delete_all_schedules_attached(client: CogniteClient, function: Function):
+def delete_all_schedules_for_ext_id(client: CogniteClient, function_external_id: str):
     """
     We want to delete ALL existing schedules since we don't keep state anywhere and we want to wipe:
       1. Those we are going to recreate
       2. Those removed permanently
     """
-    # Note for myself in the future:
-    # function.function.list_schedules() doesn't return old/orphan schedules at the time that was written
-    schedule_ids = [
-        schedule.id
-        for schedule in client.functions.schedules.list(limit=None)
-        if schedule.function_external_id == function.external_id
-    ]
-    if schedule_ids:
-        for sid in schedule_ids:  # TODO: Experimental SDK does not support "delete multiple"
-            client.functions.schedules.delete(sid)
-        logger.info(f"Deleted all ({len(schedule_ids)}) existing schedule(s)!")
+    all_schedules = client.functions.schedules.list(function_external_id=function_external_id, limit=None)
+    if all_schedules:
+        for s in all_schedules:  # TODO: Experimental SDK does not support "delete multiple"
+            client.functions.schedules.delete(s.id)
+        logger.info(f"Deleted all ({len(all_schedules)}) existing schedule(s)!")
+    else:
+        logger.info("No existing schedule(s) to delete!")
 
 
 def deploy_schedule(client: CogniteClient, function: Function, config: FunctionConfig):
-    delete_all_schedules_attached(client, function)
+    delete_all_schedules_for_ext_id(client, function.external_id)
 
     if not config.schedules:
         logger.info("Skipped step of attaching schedules!")

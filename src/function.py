@@ -7,13 +7,13 @@ from pathlib import Path
 from typing import Union
 from zipfile import ZipFile
 
-from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 from retry import retry
 
 from config import FunctionConfig
-from schedule import delete_all_schedules_attached
+from schedule import delete_all_schedules_for_ext_id
 
 logger = logging.getLogger(__name__)
 
@@ -62,14 +62,14 @@ def try_delete(client: CogniteClient, external_id: str):
 
 
 def try_delete_function(client: CogniteClient, external_id: str):
-    if function_exist(client, external_id):  # I don't want to deal with mocks for now :(
-        function = client.functions.retrieve(external_id=external_id)
-        if function is not None:
-            delete_all_schedules_attached(client, function)
+    # Schedules live on when functions die, so we always clean up:
+    delete_all_schedules_for_ext_id(client, external_id)
 
-            logger.info(f"Found existing function '{external_id}'. Deleting ...")
-            client.functions.delete(external_id=external_id)
-            logger.info(f"Delete of function '{external_id}' successful!")
+    function = client.functions.retrieve(external_id=external_id)
+    if function is not None:
+        logger.info(f"Found existing function '{external_id}'. Deleting ...")
+        client.functions.delete(external_id=external_id)
+        logger.info(f"Delete of function '{external_id}' successful!")
 
 
 def try_delete_function_file(client: CogniteClient, external_id: str):
@@ -150,19 +150,21 @@ def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function
 
     if config.overwrite:
         # upsert was requested. delete schedules, function and files
-        try_delete(client=client, external_id=config.external_id)
-
+        try_delete(client, config.external_id)
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
 
+    except CogniteAPIError as e:
+        if "Function externalId duplicated" in e.message:
+            # Function was registered, but an unknown error occurred. Delete and trigger retry:
+            try_delete_function(client, config.external_id)
+            raise FunctionDeployError(e.message) from None
+        raise  # We don't want to trigger retry for unknown problems
+
     except (FunctionDeployError, FunctionDeployTimeout):
         try_delete_function_file(client, zip_file_name)
         raise
-
-
-def function_exist(client: CogniteClient, external_id: str) -> bool:
-    return client.functions.retrieve(external_id=external_id) is not None
 
 
 def file_exists(client: CogniteClient, external_id: str) -> bool:
