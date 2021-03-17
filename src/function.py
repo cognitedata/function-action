@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Union
 from zipfile import ZipFile
 
-from cognite.client.exceptions import CogniteNotFoundError, CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 from retry import retry
