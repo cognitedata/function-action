@@ -1,6 +1,7 @@
 import base64
 import contextlib
 import json
+import logging
 import warnings
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -17,6 +18,8 @@ KEY_DEPLOYMENT_KEY = "deployment_key"
 KEY_RUNTIME_KEY = "runtime_key"
 KEY_CDF_BASE_URL = "cdf_base_url"
 CLIENT_NAME_FUNC_ACTION = "function-action-validator"
+
+logger = logging.getLogger(__name__)
 
 
 class TenantConfig(BaseModel):
@@ -143,13 +146,6 @@ class FunctionConfig(BaseModel):
             raise ValueError(f"Invalid file name, must end with '.py', but got '{value}'")
         return value
 
-    @validator("schedule_file")
-    def valid_schedule_file(cls, value):
-        allowed_file_suffixes = [".yml", ".yaml"]
-        if value is not None and Path(value).suffix not in allowed_file_suffixes:
-            raise ValueError(f"Invalid file suffix for '{value}', expected {' or '.join(allowed_file_suffixes)}")
-        return value
-
     @validator("secret")
     def valid_secret(cls, value):
         try:
@@ -183,14 +179,19 @@ class FunctionConfig(BaseModel):
                 values["common_folder_path"] = is_dir_validator("common")
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def check_schedules(cls, values):
-        file = values.get("schedule_file")
-        folder = values.get("folder_path")
-        if file is not None and folder is not None:
-            path = Path(folder) / Path(file)
-            if not path.exists() or not path.is_file():
-                raise ValueError(f"Schedules file doesn't exist at path: {path.absolute()}")
+        file = values["schedule_file"]
+        if file is None:
+            return values
+        path = Path(values["folder_path"]) / file
+        if path.is_file():
+            allowed_file_suffixes = [".yml", ".yaml"]
+            if path.suffix not in allowed_file_suffixes:
+                raise ValueError(f"Invalid file suffix for '{file}', expected {' or '.join(allowed_file_suffixes)}")
+        else:
+            values["schedule_file"] = None
+            logger.warning(f"Ignoring given schedule file '{file}', path does not exist: {path.absolute()}")
         return values
 
     @property
