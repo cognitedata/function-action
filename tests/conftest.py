@@ -43,7 +43,7 @@ def valid_config(monkeypatch, loggedin_status):
         cdf_mock.login.status.return_value = loggedin_status
         return FunctionConfig(  # nosec
             external_id="test:hello_world_function/function",
-            folder_path="tests",
+            function_folder="tests",
             file="handler.py",
             tenant=TenantConfig(
                 cdf_project="mock",

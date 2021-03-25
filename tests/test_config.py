@@ -24,7 +24,7 @@ def test_cross_project_config(monkeypatch, loggedin_status):
         with pytest.raises(expected_exception=ValueError):
             FunctionConfig(
                 external_id="test:hello_world_function",
-                folder_path="hello_world_function",
+                function_folder="hello_world_function",
                 file="handler.py",
                 tenant=TenantConfig(
                     cdf_project="demo",

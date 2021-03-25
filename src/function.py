@@ -12,7 +12,7 @@ from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 from retry import retry
 
-from config import FunctionConfig, DEPLOY_WAIT_TIME_SEC
+from config import DEPLOY_WAIT_TIME_SEC, FunctionConfig
 from schedule import delete_all_schedules_for_ext_id
 
 logger = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
         external_id=external_id,
         file_id=file_id,
         api_key=config.tenant.runtime_key,
-        function_path=config.file,
+        function_path=config.function_file,
         secrets=secrets,
         owner=config.owner,
         **config.get_memory_and_cpu(),  # Do not pass kwargs if mem/cpu is not set
@@ -120,16 +120,16 @@ def _write_files_to_zip_buffer(zf: ZipFile, directory: Path):
 
 
 def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: str) -> int:
-    logger.info(f"Uploading code from '{config.folder_path}' to '{name}'")
+    logger.info(f"Uploading code from '{config.function_folder}' to '{name}'")
     buf = io.BytesIO()  # TempDir, who needs that?! :rocket:
     with ZipFile(buf, mode="a") as zf:
-        with temporary_chdir(config.folder_path):
+        with temporary_chdir(config.function_folder):
             _write_files_to_zip_buffer(zf, directory=".")
 
-        if config.common_folder_path is not None:
-            with temporary_chdir(config.common_folder_path.parent):  # Note .parent
-                logger.info(f"Added common directory: '{config.common_folder_path}' to the function")
-                _write_files_to_zip_buffer(zf, directory=config.common_folder_path)
+        if config.common_folder is not None:
+            with temporary_chdir(config.common_folder.parent):  # Note .parent
+                logger.info(f"Added common directory: '{config.common_folder}' to the function")
+                _write_files_to_zip_buffer(zf, directory=config.common_folder)
 
     data_set_id = None
     if config.data_set_external_id is not None:
