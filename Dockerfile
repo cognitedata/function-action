@@ -1,4 +1,4 @@
-# gcr.io/distroless/python3-debian10 (runtime env is using 3.7 and that's imporatant for native dependencies)
+# gcr.io/distroless/python3-debian10 (runtime env is using 3.7 and that's important for native dependencies)
 FROM python:3.7-slim AS builder
 
 ADD src /app
@@ -11,7 +11,7 @@ RUN poetry config virtualenvs.create false
 COPY poetry.lock .
 COPY pyproject.toml .
 
-# by default poetry does NOT export dev dependncies here
+# by default poetry does NOT export dev dependencies here
 RUN poetry export -f requirements.txt --output /requirements.txt
 
 # We are installing a dependency here directly into our app source dir
