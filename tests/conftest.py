@@ -1,3 +1,4 @@
+from pathlib import Path
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
@@ -36,27 +37,33 @@ def loggedin_status():
 
 
 @pytest.fixture
-def valid_config(monkeypatch, loggedin_status):
-    monkeypatch.setenv("FUNCTION_KEY", "FUNCTION_KEY")
-    monkeypatch.setenv("DEPLOYMENT_KEY", "DEPLOYMENT_KEY")
+def valid_config_dct():
+    return {
+        "function_name": "test:hello_world_function/function",
+        "function_folder": "tests",
+        "function_secrets": "eyJrZXkiOiJ2YWx1ZSJ9Cg==",  # nosec
+        "function_file": "handler.py",
+        "schedule_file": "configs/valid_schedule.yml",
+        "data_set_external_id": None,
+        "common_folder": None,
+        "tenant": {
+            "cdf_project": "mock",  # Matches loggedin_status.project
+            "cdf_deployment_credentials": "DEPLOYMENT_KEY",
+            "cdf_runtime_credentials": "FUNCTION_KEY",
+            "cdf_base_url": "https://api.cognitedata.com",
+        },
+        "remove_only": False,
+        "cpu": None,
+        "memory": None,
+        "owner": None,
+    }
+
+
+@pytest.fixture
+def valid_config(loggedin_status, valid_config_dct):
     with monkeypatch_cognite_client() as cdf_mock:
         cdf_mock.login.status.return_value = loggedin_status
-        return FunctionConfig(  # nosec
-            external_id="test:hello_world_function/function",
-            function_folder="tests",
-            file="handler.py",
-            tenant=TenantConfig(
-                cdf_project="mock",
-                deployment_key="DEPLOYMENT_KEY",
-                runtime_key="FUNCTION_KEY",
-                cdf_base_url="https://api.cognitedata.com",
-            ),
-            secret="eyJrZXkiOiJ2YWx1ZSJ9Cg==",  # this is a mock example of a valid key!
-            schedule_file="configs/valid_schedule.yml",
-            data_set_external_id=None,
-            remove_only=False,
-            overwrite=False,
-        )
+        return FunctionConfig.parse_obj(valid_config_dct)
 
 
 @pytest.fixture

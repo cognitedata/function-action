@@ -19,11 +19,10 @@ That API-key should have CDF capabilities required to run the code within the Fu
 4. `function_secrets`: The name of Github secrets that holds the base64 encoded JSON dictionary with secrets. (see secrets section)
 5. `schedule_file`: File location with the list of schedules to be applied, see the file format below (defaults to None i.e. no schedules).
 6. `remove_only`: Checks that specified function is removed with all its schedules. Deployment logic is skipped
-7. `overwrite`: Don't fail the action if function already exists and overwrite it
-8. `data_set_external_id`: [recommended] Data set external ID to use for the function-associated file (zipped code folder).
-9. `cpu`: Set number of CPU cores per function. See defaults and allowed values in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
-10. `memory`: Set memory per function measured in GB. See defaults and allowed values in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
-11. `owner`: Used to specify a function's owner. See allowed number of characters in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions)
+7. `data_set_external_id`: [recommended] Data set external ID to use for the function-associated file (zipped code folder).
+8. `cpu`: Set number of CPU cores per function. See defaults and allowed values in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
+9. `memory`: Set memory per function measured in GB. See defaults and allowed values in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
+10. `owner`: Used to specify a function's owner. See allowed number of characters in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions)
 
 ### Schedule file format
 ```yaml
