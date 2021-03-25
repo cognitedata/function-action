@@ -12,7 +12,7 @@ from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 from retry import retry
 
-from config import FunctionConfig
+from config import FunctionConfig, DEPLOY_WAIT_TIME_SEC
 from schedule import delete_all_schedules_for_ext_id
 
 logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
         **config.get_memory_and_cpu(),  # Do not pass kwargs if mem/cpu is not set
     )
     logging.info(f"Function '{external_id}' created. Waiting for deployment...")
-    function = await_function_deployment(client, external_id, config.deploy_wait_time_sec)
+    function = await_function_deployment(client, external_id, DEPLOY_WAIT_TIME_SEC)
     logging.info(f"Function '{external_id}' deployed successfully!")
     return function
 

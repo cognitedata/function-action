@@ -10,88 +10,44 @@ import yaml
 from cognite.client import CogniteClient
 from cognite.experimental import CogniteClient as ExpCogniteClient
 from crontab import CronSlices
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, root_validator, validator, constr
 
-# TenantConfig parameters:
-KEY_CDF_PROJECT = "cdf_project"
-KEY_DEPLOYMENT_KEY = "deployment_key"
-KEY_RUNTIME_KEY = "runtime_key"
-KEY_CDF_BASE_URL = "cdf_base_url"
-CLIENT_NAME_FUNC_ACTION = "function-action-validator"
 
 logger = logging.getLogger(__name__)
 
+# Pydantic fields:
+non_empty_str = constr(min_length=1, strip_whitespace=True)
+
+DEPLOY_WAIT_TIME_SEC = 1200  # 20 minutes
+
 
 class TenantConfig(BaseModel):
-    cdf_project: Optional[str]
-    deployment_key: str
-    runtime_key: str
-    cdf_base_url: Optional[str]
-
-    @validator(KEY_CDF_PROJECT, pre=True)
-    def valid_project(cls, value):
-        if isinstance(value, str) and value == "":
-            raise ValueError("CDF project should not be an empty string.")
-        return value
-
-    @validator(KEY_DEPLOYMENT_KEY, pre=True)
-    def valid_deployment_key(cls, value):
-        if value is None:
-            raise ValueError("Missing Cognite Functions deployment API-key.'")
-        elif value == "":
-            raise ValueError("Deployment API-key for Cognite Functions should not be empty.")
-        return value
-
-    @validator(KEY_RUNTIME_KEY, pre=True)
-    def valid_runtime_key(cls, value):
-        if value is None:
-            raise ValueError("Missing Cognite Functions runtime API-key.'")
-        elif value == "":
-            raise ValueError("Runtime API-key for Cognite Functions should not be empty.")
-        return value
-
-    @validator(KEY_CDF_BASE_URL, pre=True)
-    def valid_cdf_base_url_key(cls, value):
-        if value is None:
-            return "https://api.cognitedata.com"
-        if isinstance(value, str) and value.strip() == "":
-            raise ValueError("CDF base url should not be an empty string.")
-        return value
+    cdf_project: non_empty_str
+    deployment_key: non_empty_str
+    runtime_key: non_empty_str
+    cdf_base_url: non_empty_str
 
     @root_validator()
     def check_credentials(cls, values):
-        project = values.get(KEY_CDF_PROJECT)
-        if project is None:
-            return values
+        project = values["cdf_project"]
+        kwargs = {
+            "base_url": values["cdf_base_url"],
+            "client_name": "function-action-validator",
+            "disable_pypi_version_check": True,
+        }
+        for env in ["deployment", "runtime"]:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                client = CogniteClient(api_key=values[f"{env}_key"], **kwargs)
+            if not client.login.status().logged_in:
+                raise ValueError(f"Can't login with {env} credentials")
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            deployment_client = CogniteClient(
-                api_key=values.get(KEY_DEPLOYMENT_KEY),
-                base_url=values.get(KEY_CDF_BASE_URL),
-                client_name=CLIENT_NAME_FUNC_ACTION,
-            )
-        if not deployment_client.login.status().logged_in:
-            raise ValueError("Can't login with deployment credentials")
-
-        inferred_project = deployment_client.login.status().project
-        if inferred_project != project:
-            raise ValueError(
-                f"Inferred project, {inferred_project}, from the provided deployment credentials "
-                f"does not match the project defined: {project}"
-            )
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            runtime_client = CogniteClient(
-                api_key=values.get(KEY_RUNTIME_KEY),
-                base_url=values.get(KEY_CDF_BASE_URL),
-                client_name=CLIENT_NAME_FUNC_ACTION,
-            )
-        if not runtime_client.login.status().logged_in:
-            raise ValueError("Can't login with runtime credentials")
-
-        if runtime_client.login.status().project != project:
-            raise ValueError(f"Provided runtime credentials doesn't match the project defined: {project}")
+            inferred_project = client.login.status().project
+            if inferred_project != project:
+                raise ValueError(
+                    f"Inferred project, {inferred_project}, from the provided {env} credentials "
+                    f"does not match the given project: {project}"
+                )
         return values
 
 
@@ -101,17 +57,17 @@ def create_experimental_cognite_client(config: TenantConfig) -> ExpCogniteClient
         project=config.cdf_project,
         base_url=config.cdf_base_url,
         client_name="function-action",
+        disable_pypi_version_check=True,
     )
 
 
 class ScheduleConfig(BaseModel):
-    cron: str
-    name: str
-    data: Dict
+    name: non_empty_str
+    cron: non_empty_str
+    data: Optional[Dict]
 
     @validator("cron")
     def valid_cron(cls, value):
-        value = value.strip()
         if not CronSlices.is_valid(value):
             raise ValueError(f"Invalid cron expression: '{value}'")
         return value
@@ -124,91 +80,75 @@ def decode_and_parse(value) -> Optional[Dict]:
     return json.loads(decoded)
 
 
+def verify_path_is_directory(path):
+    if not path.is_dir():
+        raise ValueError(f"Invalid folder path: '{path}', not a directory!")
+    return path
+
+
 class FunctionConfig(BaseModel):
     external_id: str
     folder_path: Path
-    common_folder_path: Optional[Path]
-    file: str
-    schedule_file: Optional[str]
-    data_set_external_id: Optional[str]
-    secret: Optional[str]
+    common_folder_path: Path = None
+    file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- ]+\.py$")
+    schedule_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- ]+\.ya?ml$") = None
+    data_set_external_id: str = None
+    secret: str = None
     tenant: TenantConfig
-    overwrite: bool
     remove_only: bool = False
-    deploy_wait_time_sec: int = 1200  # 20 minutes
-    cpu: Optional[float]
-    memory: Optional[float]
-    owner: Optional[str]
-
-    @validator("file")
-    def valid_file(cls, value):
-        if not value.endswith(".py"):
-            raise ValueError(f"Invalid file name, must end with '.py', but got '{value}'")
-        return value
+    cpu: float = None
+    memory: float = None
+    owner: constr(min_length=1, max_length=128, strip_whitespace=True) = None
 
     @validator("secret")
     def valid_secret(cls, value):
+        if value is None:
+            return value
         try:
             decode_and_parse(value)
         except Exception as e:
             raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
         return value
 
-    @validator("owner")
-    def valid_owner_string_len(cls, value):
-        if value is not None and len(value) > 128:
-            raise ValueError("Invalid owner input, must be <= 128 characters")
-        return value
-
     @root_validator()
     def check_folder_paths(cls, values):
-        def is_dir_validator(value):
-            if not isinstance(value, Path):
-                value = Path(value)
-            if not value.is_dir():
-                raise ValueError(f"Invalid folder value: '{value}', not a directory!")
-            return value
+        verify_path_is_directory(values["folder_path"])
 
-        values["folder_path"] = is_dir_validator(values["folder_path"])
         common_folder_path = values["common_folder_path"]
         if common_folder_path is not None:
-            values["common_folder_path"] = is_dir_validator(common_folder_path)
+            verify_path_is_directory(common_folder_path)
         else:
             # Try default directory 'common/':
             with contextlib.suppress(ValueError):
-                values["common_folder_path"] = is_dir_validator("common")
+                values["common_folder_path"] = verify_path_is_directory(Path("common"))
         return values
 
-    @root_validator(pre=True)
+    @root_validator(skip_on_failure=True)
     def check_schedules(cls, values):
-        file = values["schedule_file"]
-        if file is None:
+        schedule_file = values["schedule_file"]
+        if schedule_file is None:
             return values
-        path = Path(values["folder_path"]) / file
-        if path.is_file():
-            allowed_file_suffixes = [".yml", ".yaml"]
-            if path.suffix not in allowed_file_suffixes:
-                raise ValueError(f"Invalid file suffix for '{file}', expected {' or '.join(allowed_file_suffixes)}")
-        else:
+        path = values["folder_path"] / schedule_file
+        if not path.is_file():
             values["schedule_file"] = None
-            logger.warning(f"Ignoring given schedule file '{file}', path does not exist: {path.absolute()}")
+            logger.warning(f"Ignoring given schedule file '{schedule_file}', path does not exist: {path.absolute()}")
         return values
 
     @property
     def schedules(self) -> List[ScheduleConfig]:
-        if self.schedule_file is not None:
-            path = Path(self.folder_path) / Path(self.schedule_file)
-            with path.open(mode="r") as f:
-                collection: List[Dict] = yaml.safe_load(f.read())
-            return [
-                ScheduleConfig(
-                    cron=col.get("cron"),
-                    name=self.external_id + ":" + col.get("name", f"undefined-{i}"),
-                    data=col.get("data", {}),
-                )
-                for i, col in enumerate(collection)
-            ]
-        return []
+        if self.schedule_file is None:
+            return []
+        path = self.folder_path / self.schedule_file
+        with path.open() as f:
+            all_schedules = yaml.safe_load(f)
+        return [
+            ScheduleConfig(
+                cron=schedule.get("cron"),  # If missing, we let Pydantic handle it
+                name=self.external_id + ":" + schedule.get("name", f"undefined-{i}"),
+                data=schedule.get("data"),
+            )
+            for i, schedule in enumerate(all_schedules)
+        ]
 
     @property
     def unpacked_secrets(self) -> Optional[Dict]:

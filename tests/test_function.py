@@ -5,6 +5,7 @@ import pytest
 from cognite.client.data_classes import FileMetadata
 from cognite.experimental.data_classes import Function
 
+from config import DEPLOY_WAIT_TIME_SEC
 from function import (
     FunctionDeployError,
     FunctionDeployTimeout,
@@ -86,11 +87,10 @@ def test_create_and_wait(await_function_deployment_mock, response, expectation, 
     cognite_experimental_client_mock.functions.create.return_value = Function(external_id=mock_external_id)
     mock_config = MagicMock()
     mock_config.external_id = mock_external_id
-    mock_config.deploy_wait_time_sec = 1337
     with expectation:
         assert response == create_function_and_wait(cognite_experimental_client_mock, mock_external_id, mock_config)
         assert await_function_deployment_mock.call_args_list == [
-            call(cognite_experimental_client_mock, mock_external_id, 1337)
+            call(cognite_experimental_client_mock, mock_external_id, DEPLOY_WAIT_TIME_SEC)
         ]
 
 
