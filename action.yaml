@@ -39,6 +39,10 @@ inputs:
     description: Data set external ID to use for the function-associated file (zipped code folder).
     default: ""
     required: false
+  common_folder:
+    description: Directory which contains code used by multiple functions.
+    default: common
+    required: false
   remove_only:
     description: Remove all artifacts and do not create new ones.
     default: false
