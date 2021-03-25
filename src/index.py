@@ -18,10 +18,9 @@ logger = logging.getLogger(__name__)
 
 def main(config: FunctionConfig) -> None:
     client = create_experimental_cognite_client(config.tenant)
-
-    # Delete old function and file:
-    try_delete(client, config.external_id)
     if config.remove_only:
+        # Delete old function and file:
+        try_delete(client, config.external_id)
         return
 
     # Zip files, upload to Files and create CogFunc:

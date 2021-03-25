@@ -29,7 +29,7 @@ class FunctionDeployError(Exception):
 def get_data_set_id_from_external_id(client: CogniteClient, ext_id: str) -> int:
     """
     Assuming internal IDs eventually will (read: should) die, we enforce the use
-    of external IDs in this Github action... but since the SDK (cur 2.10.3)
+    of external IDs in this Github action... but since the SDK (cur 2.15.0)
     does not support data set external ID for FilesAPI, we need lookup...
     """
     ds = client.data_sets.retrieve(external_id=ext_id)
@@ -42,16 +42,20 @@ def get_data_set_id_from_external_id(client: CogniteClient, ext_id: str) -> int:
 
 
 def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Function:
-    t_end = time.time() + wait_time_sec
-    while time.time() <= t_end:
+    t0 = time.time()
+    while time.time() <= t0 + wait_time_sec:
         function = client.functions.retrieve(external_id=external_id)
-        if function is not None:
-            if function.status == "Ready":
-                logger.info(f"Deployment took {round(t_end-time.time(), 2)} seconds")
-                return function
-            if function.status == "Failed":
-                raise FunctionDeployError(function.error["trace"])
-        time.sleep(3)
+        if function is None:  # Should not ever happen... :shrug:
+            err = f"No function with external_id={external_id} exists!"
+            logger.warning(err)
+            raise FunctionDeployError(err)
+        elif function.status == "Ready":
+            logger.info(f"Function deployment successful! Deployment took {time.time()-t0:.2f} seconds")
+            return function
+        elif function.status == "Failed":
+            logger.warning(f"Deployment failed after {time.time()-t0:.2f} seconds! Error: {function.error['trace']}")
+            raise FunctionDeployError(function.error["trace"])
+        time.sleep(5)
 
     raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_sec} seconds.")
 
@@ -97,9 +101,7 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
         **config.get_memory_and_cpu(),  # Do not pass kwargs if mem/cpu is not set
     )
     logging.info(f"Function '{external_id}' created. Waiting for deployment...")
-    function = await_function_deployment(client, external_id, DEPLOY_WAIT_TIME_SEC)
-    logging.info(f"Function '{external_id}' deployed successfully!")
-    return function
+    return await_function_deployment(client, external_id, DEPLOY_WAIT_TIME_SEC)
 
 
 @contextmanager
@@ -133,7 +135,7 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 
     data_set_id = None
     if config.data_set_external_id is not None:
-        # This looks idiotic, but the SDK does not yet support ext_ids for files... facepalm:
+        # This looks idiotic, but the SDK does not yet support data set ext. id for files... facepalm:
         data_set_id = get_data_set_id_from_external_id(client, config.data_set_external_id)
 
     file_meta = client.files.upload_bytes(buf.getvalue(), name=name, external_id=name, data_set_id=data_set_id)
@@ -147,10 +149,7 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 @retry(exceptions=(IOError, FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)  # Also external ID
-
-    if config.overwrite:
-        # upsert was requested. delete schedules, function and files
-        try_delete(client, config.external_id)
+    try_delete(client, config.external_id)
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)

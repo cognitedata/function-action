@@ -1,5 +1,5 @@
-from pathlib import Path
 from contextlib import contextmanager
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
