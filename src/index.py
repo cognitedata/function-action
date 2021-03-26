@@ -50,7 +50,7 @@ if __name__ == "__main__":
     import glob, os
     from pathlib import Path
     print(Path(__file__).absolute())  # /app/index.py
-    os.chdir("..")
+    os.chdir("/app")
     for f in glob.glob("**", recursive=True):
         print(f)
     # Function Action, assemble!!
