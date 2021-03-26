@@ -34,7 +34,7 @@ class TenantConfig(BaseModel):
     def runtime_key(self):
         return self.cdf_runtime_credentials
 
-    @root_validator()
+    @root_validator(skip_on_failure=True)
     def check_credentials(cls, values):
         project = values["cdf_project"]
         kwargs = {
@@ -117,7 +117,7 @@ class FunctionConfig(BaseModel):
             raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
         return value
 
-    @root_validator()
+    @root_validator(skip_on_failure=True)
     def check_function_folders(cls, values):
         verify_path_is_directory(values["function_folder"])
 

@@ -47,21 +47,6 @@ def setup_config() -> FunctionConfig:
 
 
 if __name__ == "__main__":
-    from pathlib import Path
-    print(Path(__file__).absolute(), Path(__file__).is_file())  # /app/index.py
-
-    f = Path("/app/action.yaml")
-    print(f.absolute(), f.is_file())
-
-    f = Path("app/action.yaml")
-    print(f.absolute(), f.is_file())
-
-    f = Path("/action.yaml")
-    print(f.absolute(), f.is_file())
-
-    f = Path("action.yaml")
-    print(f.absolute(), f.is_file())
-
     # Function Action, assemble!!
     config = setup_config()
     main(config)
