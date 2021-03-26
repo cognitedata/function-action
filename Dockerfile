@@ -2,7 +2,7 @@
 FROM python:3.7-slim AS builder
 
 ADD src /app
-COPY action.yaml /app
+COPY LICENSE /app
 WORKDIR /
 
 # Poetry setup
