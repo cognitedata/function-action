@@ -34,7 +34,7 @@ def main(config: FunctionConfig) -> None:
 
 def setup_config() -> FunctionConfig:
     # Use 'action.yaml' as the single source of truth for param names:
-    with open("action.yaml") as f:
+    with open("/action.yaml") as f:
         inputs = set(yaml.safe_load(f)["inputs"])
 
     tenant_params = [inp for inp in inputs if inp.startswith("cdf")]
