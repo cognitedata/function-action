@@ -32,6 +32,11 @@ def main(config: FunctionConfig) -> None:
     print(f"::set-output name=function_external_id::{function.external_id}")
 
 
+def get_param_value(param):
+    # GitHub action passes all missing arguments as an empty string:
+    return os.getenv(f"INPUT_{param.upper()}") or None
+
+
 def setup_config() -> FunctionConfig:
     # Use 'action.yaml' as the single source of truth for param names:
     with open("/app/action.yaml") as f:
@@ -40,16 +45,9 @@ def setup_config() -> FunctionConfig:
     tenant_params = [inp for inp in inputs if inp.startswith("cdf")]
     function_params = inputs.difference(tenant_params)
 
-    print()
-    print("tenant_params:")
-    print({p: os.getenv(f"INPUT_{p.upper()}") for p in tenant_params})
-    print()
-    print("function_param:")
-    print({p: os.getenv(f"INPUT_{p.upper()}") for p in function_params})
-    print()
     return FunctionConfig(
-        tenant=TenantConfig(**{p: os.getenv(f"INPUT_{p.upper()}") for p in tenant_params}),
-        **{p: os.getenv(f"INPUT_{p.upper()}") for p in function_params},
+        tenant=TenantConfig(**{p: get_param_value(p) for p in tenant_params}),
+        **{p: get_param_value(p) for p in function_params},
     )
 
 

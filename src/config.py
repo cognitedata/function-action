@@ -96,16 +96,16 @@ def verify_path_is_directory(path):
 class FunctionConfig(BaseModel):
     function_name: non_empty_str
     function_folder: Path
-    function_secrets: Optional[non_empty_str]
+    function_secrets: non_empty_str = None
     function_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- ]+\.py$")  # noqa: F722
-    schedule_file: Optional[constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- /]+\.ya?ml$")]  # noqa: F722
-    data_set_external_id: Optional[non_empty_str]
-    common_folder: Optional[Path]
+    schedule_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- /]+\.ya?ml$") = None  # noqa: F722
+    data_set_external_id: non_empty_str = None
+    common_folder: Path = None
     tenant: TenantConfig
     remove_only: bool = False
-    cpu: Optional[float]
-    memory: Optional[float]
-    owner: Optional[constr(min_length=1, max_length=128, strip_whitespace=True)]
+    cpu: float = None
+    memory: float = None
+    owner: constr(min_length=1, max_length=128, strip_whitespace=True) = None
 
     @validator("function_secrets")
     def valid_secret(cls, value):
