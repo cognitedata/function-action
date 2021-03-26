@@ -34,7 +34,7 @@ def main(config: FunctionConfig) -> None:
 
 def setup_config() -> FunctionConfig:
     # Use 'action.yaml' as the single source of truth for param names:
-    with open("/app/action.yaml") as f:
+    with open("/action.yaml") as f:
         inputs = set(yaml.safe_load(f)["inputs"])
 
     tenant_params = [inp for inp in inputs if inp.startswith("cdf")]
@@ -50,9 +50,12 @@ if __name__ == "__main__":
     import glob, os
     from pathlib import Path
     print(Path(__file__).absolute())  # /app/index.py
-    os.chdir("/app")
-    for f in glob.glob("**", recursive=True):
-        print(f)
+    c = 0
+    for f in glob.glob("/**", recursive=True):
+        if "action" in f:
+            print(f)
+        c += 1
+    print("Tot files", c)
     # Function Action, assemble!!
     config = setup_config()
     main(config)
