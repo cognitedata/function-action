@@ -34,7 +34,7 @@ class TenantConfig(BaseModel):
     def runtime_key(self):
         return self.cdf_runtime_credentials
 
-    @root_validator()
+    @root_validator(skip_on_failure=True)
     def check_credentials(cls, values):
         project = values["cdf_project"]
         kwargs = {
@@ -94,12 +94,12 @@ def verify_path_is_directory(path):
 
 
 class FunctionConfig(BaseModel):
-    function_name: str
+    function_name: non_empty_str
     function_folder: Path
-    function_secrets: str = None
-    function_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- ]+\.py$")  # # noqa: F722
-    schedule_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- /]+\.ya?ml$") = None  # # noqa: F722
-    data_set_external_id: str = None
+    function_secrets: non_empty_str = None
+    function_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- ]+\.py$")  # noqa: F722
+    schedule_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- /]+\.ya?ml$") = None  # noqa: F722
+    data_set_external_id: non_empty_str = None
     common_folder: Path = None
     tenant: TenantConfig
     remove_only: bool = False
@@ -117,7 +117,7 @@ class FunctionConfig(BaseModel):
             raise ValueError("Invalid secret, must be a valid base64 encoded json") from e
         return value
 
-    @root_validator()
+    @root_validator(skip_on_failure=True)
     def check_function_folders(cls, values):
         verify_path_is_directory(values["function_folder"])
 
