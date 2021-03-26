@@ -20,9 +20,9 @@ That API-key should have CDF capabilities required to run the code within the Fu
 5. `schedule_file`: File location with the list of schedules to be applied, see the file format below (defaults to None i.e. no schedules).
 6. `remove_only`: Checks that specified function is removed with all its schedules. Deployment logic is skipped
 7. `data_set_external_id`: [recommended] Data set external ID to use for the function-associated file (zipped code folder).
-8. `cpu`: Set number of CPU cores per function. See defaults and allowed values in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
-9. `memory`: Set memory per function measured in GB. See defaults and allowed values in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
-10. `owner`: Used to specify a function's owner. See allowed number of characters in the [api documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions)
+8. `cpu`: Set number of CPU cores per function. See defaults and allowed values in the [API documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
+9. `memory`: Set memory per function measured in GB. See defaults and allowed values in the [API documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
+10. `owner`: Used to specify a function's owner. See allowed number of characters in the [API documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions)
 
 ### Schedule file format
 ```yaml
