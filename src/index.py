@@ -40,6 +40,13 @@ def setup_config() -> FunctionConfig:
     tenant_params = [inp for inp in inputs if inp.startswith("cdf")]
     function_params = inputs.difference(tenant_params)
 
+    print()
+    print("tenant_params:")
+    print({p: os.getenv(f"INPUT_{p.upper()}") for p in tenant_params})
+    print()
+    print("function_param:")
+    print({p: os.getenv(f"INPUT_{p.upper()}") for p in function_params})
+    print()
     return FunctionConfig(
         tenant=TenantConfig(**{p: os.getenv(f"INPUT_{p.upper()}") for p in tenant_params}),
         **{p: os.getenv(f"INPUT_{p.upper()}") for p in function_params},
