@@ -47,6 +47,9 @@ def setup_config() -> FunctionConfig:
 
 
 if __name__ == "__main__":
+    import glob
+    for f in glob.glob("**", recursive=True):
+        print(f)
     # Function Action, assemble!!
     config = setup_config()
     main(config)
