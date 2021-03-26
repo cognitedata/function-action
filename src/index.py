@@ -33,7 +33,7 @@ def main(config: FunctionConfig) -> None:
 
 
 def setup_config() -> FunctionConfig:
-    # Use 'action.yaml' as the single source of thruth for param names:
+    # Use 'action.yaml' as the single source of truth for param names:
     with open("action.yaml") as f:
         inputs = set(yaml.safe_load(f)["inputs"])
 

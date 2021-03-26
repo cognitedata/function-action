@@ -8,6 +8,7 @@ WORKDIR /
 RUN pip3 install poetry
 RUN poetry config virtualenvs.create false
 
+COPY action.yaml .
 COPY poetry.lock .
 COPY pyproject.toml .
 
