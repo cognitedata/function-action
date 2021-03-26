@@ -2,13 +2,13 @@
 FROM python:3.7-slim AS builder
 
 ADD src /app
+COPY action.yaml /app
 WORKDIR /
 
 # Poetry setup
 RUN pip3 install poetry
 RUN poetry config virtualenvs.create false
 
-COPY action.yaml .
 COPY poetry.lock .
 COPY pyproject.toml .
 
