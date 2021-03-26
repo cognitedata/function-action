@@ -8,7 +8,8 @@ WORKDIR /
 RUN pip3 install poetry
 RUN poetry config virtualenvs.create false
 
-ADD https://raw.githubusercontent.com/cognitedata/function-action/master/action.yaml .
+# ADD https://raw.githubusercontent.com/cognitedata/function-action/master/action.yaml .
+COPY action.yaml .
 COPY poetry.lock .
 COPY pyproject.toml .
 
