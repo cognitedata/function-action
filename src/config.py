@@ -21,7 +21,7 @@ DEPLOY_WAIT_TIME_SEC = 1200  # 20 minutes
 
 
 class TenantConfig(BaseModel):
-    cdf_project: non_empty_str
+    cdf_project: non_empty_str = None
     cdf_deployment_credentials: non_empty_str
     cdf_runtime_credentials: non_empty_str
     cdf_base_url: non_empty_str
@@ -50,6 +50,8 @@ class TenantConfig(BaseModel):
                 raise ValueError(f"Can't login with {env} credentials")
 
             inferred_project = client.login.status().project
+            if project is None:
+                logger.warning(f"Inferred project: {inferred_project} from given {env} credentials ")
             if inferred_project != project:
                 raise ValueError(
                     f"Inferred project, {inferred_project}, from the provided {env} credentials "

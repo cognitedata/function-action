@@ -9,7 +9,7 @@ inputs:
         required: true
     cdf_project:
         description: The name of your cdf project. Will be checked that it matches given credentials.
-        required: true
+        required: false
     cdf_base_url:
         description: Base url of your cdf project.
         default: https://api.cognitedata.com
