@@ -51,8 +51,9 @@ class TenantConfig(BaseModel):
 
             inferred_project = client.login.status().project
             if project is None:
+                values["cdf_project"] = inferred_project
                 logger.warning(f"Inferred project: {inferred_project} from given {env} credentials ")
-            if inferred_project != project:
+            elif inferred_project != project:
                 raise ValueError(
                     f"Inferred project, {inferred_project}, from the provided {env} credentials "
                     f"does not match the given project: {project}"
