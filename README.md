@@ -1,5 +1,5 @@
 # Deploy Cognite Function action
-This action deploys a Python function to Cognite Functions, possibly with schedule(s).
+This action deploys a Python function to Cognite Functions, optionally with schedule(s).
 
 ## Inputs
 ### Function metadata in Github Workflow
@@ -8,7 +8,7 @@ This action deploys a Python function to Cognite Functions, possibly with schedu
 2. `function_folder`: Parent folder of for the function's code.
 3. `cdf_deployment_credentials`: The API-key that will be used to deploy the function. It must have the following CDF capabilities: `Files:READ`, `Files:WRITE`, `Functions:READ`, `Functions:WRITE`. You can scope the files-access to a dataset (see 'data_set_external_id')`).
 4. `cdf_runtime_credentials`: The API-key that the function will use when running "inside" of Cognite Functions. It must have the CDF capabilities required to run your code.
-Example: if your code has to read assets, and write to timeseries, it will need `Assets:READ` and `TimeSeries:Write`.
+Example: if your code has to read assets, and write to timeseries, it will need `Assets:READ` and `TimeSeries:WRITE`.
 
 #### Optional
 1. `common_folder`:  The path to the folder containing code that is shared between all functions. Defaults to `common/`. More information below.
@@ -35,7 +35,7 @@ Example: if your code has to read assets, and write to timeseries, it will need 
   data:
     lovely-parameter: False
     something-else: 777
-- name: Hourly schedule  # Same name as another function (allowed), but with no `data` (also allowed).
+- name: Hourly schedule  # Same name as another schedule (allowed), but with no `data` (also allowed).
   cron: "0 * * * *"
 ```
 
