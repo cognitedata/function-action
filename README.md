@@ -4,7 +4,7 @@ This action deploys a Python function to Cognite Functions, optionally with sche
 ## Inputs
 ### Function metadata in Github Workflow
 #### Required
-1. `function_name`: Name of your function. That name will become an `external_id` and *must* be unique within your project. If it is not, it will get overwritten!
+1. `function_name`: Name of your function AND what we will use as `external_id` for the function (plus a small suffix like `-master`). If it is not unique within your project, *the existing function will be overwritten*!
 2. `function_folder`: Parent folder of for the function's code.
 3. `cdf_deployment_credentials`: The API-key that will be used to deploy the function. It must have the following CDF capabilities: `Files:READ`, `Files:WRITE`, `Functions:READ`, `Functions:WRITE`. You can scope the files-access to a dataset (see 'data_set_external_id')`).
 4. `cdf_runtime_credentials`: The API-key that the function will use when running "inside" of Cognite Functions. It must have the CDF capabilities required to run your code.
@@ -46,6 +46,8 @@ See our repository [`deploy-templates`](https://github.com/cognitedata/deploy-fu
 ### Common folder
 A common use case is that you do not want to replicate utility code between all function folders. In order to accommodate this, we copy all the contents in the folder specified by `common_folder` into the functions we upload to Cognite Functions. If this is not specified, we check if `common/` exists in the root folder and if so, _we use it_.
 
+#### When using a common/shared folder, make sure you don't get a name conflict in one of your functions!
+
 #### Handling imports
 A typical setup looks like this:
 ```
@@ -84,6 +86,8 @@ eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo=
 ```
 To decode and verify it, do:
 ```sh
+$ echo eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo= | base64 --decode
+$ (Alternative using Python:)
 $ echo eyJzbGFjay10b2tlbiI6ICIxMjMtbXktc2VjcmV0LWFwaS1rZXkifQo= | python -m base64 -d
 {"slack-token": "123-my-secret-api-key"}
 ```
