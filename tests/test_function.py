@@ -5,6 +5,7 @@ import pytest
 from cognite.client.data_classes import FileMetadata
 from cognite.experimental.data_classes import Function
 
+from config import DEPLOY_WAIT_TIME_SEC
 from function import (
     FunctionDeployError,
     FunctionDeployTimeout,
@@ -26,8 +27,8 @@ from function import (
     [
         (["Ready"], 1, contextlib.nullcontext()),
         (["Failed"], 1, pytest.raises(FunctionDeployError)),
-        (["Not ready", "Ready"], 4, contextlib.nullcontext()),
-        (["Not ready", "Failed"], 4, pytest.raises(FunctionDeployError)),
+        (["Not ready", "Ready"], 6, contextlib.nullcontext()),
+        (["Not ready", "Failed"], 6, pytest.raises(FunctionDeployError)),
     ],
 )
 def test_await_function_deployment(retrieve_status, wait_time_seconds, expectation, cognite_experimental_client_mock):
@@ -86,11 +87,10 @@ def test_create_and_wait(await_function_deployment_mock, response, expectation, 
     cognite_experimental_client_mock.functions.create.return_value = Function(external_id=mock_external_id)
     mock_config = MagicMock()
     mock_config.external_id = mock_external_id
-    mock_config.deploy_wait_time_sec = 1337
     with expectation:
         assert response == create_function_and_wait(cognite_experimental_client_mock, mock_external_id, mock_config)
         assert await_function_deployment_mock.call_args_list == [
-            call(cognite_experimental_client_mock, mock_external_id, 1337)
+            call(cognite_experimental_client_mock, mock_external_id, DEPLOY_WAIT_TIME_SEC)
         ]
 
 
@@ -101,10 +101,12 @@ def test_upload_and_create_exception(
     try_delete_function_file_mock,
     create_and_wait_mock,
     cognite_client_mock,
+    cognite_experimental_client_mock,
     exception,
     valid_config,
 ):
     create_and_wait_mock.side_effect = exception
+    cognite_client_mock.functions = cognite_experimental_client_mock.functions
 
     with pytest.raises(exception):
         upload_and_create(cognite_client_mock, valid_config)

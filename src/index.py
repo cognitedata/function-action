@@ -1,6 +1,8 @@
 import logging
 import os
 
+import yaml
+
 from config import FunctionConfig, TenantConfig, create_experimental_cognite_client
 from function import try_delete, upload_and_create
 from github_log_handler import GitHubLogHandler
@@ -16,10 +18,9 @@ logger = logging.getLogger(__name__)
 
 def main(config: FunctionConfig) -> None:
     client = create_experimental_cognite_client(config.tenant)
-
-    # Delete old function and file:
-    try_delete(client, config.external_id)
     if config.remove_only:
+        # Delete old function and file:
+        try_delete(client, config.external_id)
         return
 
     # Zip files, upload to Files and create CogFunc:
@@ -27,31 +28,26 @@ def main(config: FunctionConfig) -> None:
     logger.info(f"Successfully created and deployed function {config.external_id} with id {function.id}")
     deploy_schedule(client, function, config)
 
-    # Return output parameter:
+    # Return output parameter (GitHub magic syntax):
     print(f"::set-output name=function_external_id::{function.external_id}")
 
 
+def get_param_value(param):
+    # GitHub action passes all missing arguments as an empty string:
+    return os.getenv(f"INPUT_{param.upper()}") or None
+
+
 def setup_config() -> FunctionConfig:
-    # Note: The "or None" is there so that - if the empty string is passed - we pass None instead.
+    # Use 'action.yaml' as the single source of truth for param names:
+    with open("/app/action.yaml") as f:
+        inputs = set(yaml.safe_load(f)["inputs"])
+
+    tenant_params = [inp for inp in inputs if inp.startswith("cdf")]
+    function_params = inputs.difference(tenant_params)
+
     return FunctionConfig(
-        external_id=os.getenv("INPUT_FUNCTION_NAME", ""),
-        folder_path=os.getenv("INPUT_FUNCTION_FOLDER", ""),
-        common_folder_path=os.getenv("INPUT_COMMON_FOLDER"),
-        file=os.getenv("INPUT_FUNCTION_FILE", "handler.py"),
-        data_set_external_id=os.getenv("INPUT_DATA_SET_EXTERNAL_ID") or None,
-        tenant=TenantConfig(
-            cdf_project=os.getenv("INPUT_CDF_PROJECT") or None,
-            deployment_key=os.getenv("INPUT_CDF_DEPLOYMENT_CREDENTIALS"),
-            runtime_key=os.getenv("INPUT_CDF_RUNTIME_CREDENTIALS"),
-            cdf_base_url=os.getenv("INPUT_CDF_BASE_URL") or None,
-        ),
-        secret=os.getenv("INPUT_FUNCTION_SECRETS") or None,
-        schedule_file=os.getenv("INPUT_SCHEDULE_FILE") or None,
-        remove_only=os.getenv("INPUT_REMOVE_ONLY"),
-        overwrite=os.getenv("INPUT_OVERWRITE"),
-        cpu=os.getenv("INPUT_CPU") or None,
-        memory=os.getenv("INPUT_MEMORY") or None,
-        owner=os.getenv("INPUT_OWNER") or None,
+        tenant=TenantConfig(**{p: get_param_value(p) for p in tenant_params}),
+        **{p: get_param_value(p) for p in function_params},
     )
 
 

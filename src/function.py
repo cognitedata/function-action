@@ -12,7 +12,7 @@ from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 from retry import retry
 
-from config import FunctionConfig
+from config import DEPLOY_WAIT_TIME_SEC, FunctionConfig
 from schedule import delete_all_schedules_for_ext_id
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class FunctionDeployError(Exception):
 def get_data_set_id_from_external_id(client: CogniteClient, ext_id: str) -> int:
     """
     Assuming internal IDs eventually will (read: should) die, we enforce the use
-    of external IDs in this Github action... but since the SDK (cur 2.10.3)
+    of external IDs in this Github action... but since the SDK (cur 2.15.0)
     does not support data set external ID for FilesAPI, we need lookup...
     """
     ds = client.data_sets.retrieve(external_id=ext_id)
@@ -42,16 +42,20 @@ def get_data_set_id_from_external_id(client: CogniteClient, ext_id: str) -> int:
 
 
 def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Function:
-    t_end = time.time() + wait_time_sec
-    while time.time() <= t_end:
+    t0 = time.time()
+    while time.time() <= t0 + wait_time_sec:
         function = client.functions.retrieve(external_id=external_id)
-        if function is not None:
-            if function.status == "Ready":
-                logger.info(f"Deployment took {round(t_end-time.time(), 2)} seconds")
-                return function
-            if function.status == "Failed":
-                raise FunctionDeployError(function.error["trace"])
-        time.sleep(3)
+        if function is None:  # Should not ever happen... :shrug:
+            err = f"No function with external_id={external_id} exists!"
+            logger.warning(err)
+            raise FunctionDeployError(err)
+        elif function.status == "Ready":
+            logger.info(f"Function deployment successful! Deployment took {time.time()-t0:.2f} seconds")
+            return function
+        elif function.status == "Failed":
+            logger.warning(f"Deployment failed after {time.time()-t0:.2f} seconds! Error: {function.error['trace']}")
+            raise FunctionDeployError(function.error["trace"])
+        time.sleep(5)
 
     raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_sec} seconds.")
 
@@ -83,7 +87,7 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
     external_id, secrets = config.external_id, config.unpacked_secrets
     logger.info(f"Trying to create function '{external_id}'...")
     if secrets:
-        logger.info(f"Adding {len(secrets)} extra secrets to the function '{external_id}'")
+        logger.info(f"Adding {len(secrets)} extra secret(s) to the function '{external_id}'")
     else:
         logger.info(f"No extra secrets added to function '{external_id}'")
     client.functions.create(
@@ -91,15 +95,13 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
         external_id=external_id,
         file_id=file_id,
         api_key=config.tenant.runtime_key,
-        function_path=config.file,
+        function_path=config.function_file,
         secrets=secrets,
         owner=config.owner,
         **config.get_memory_and_cpu(),  # Do not pass kwargs if mem/cpu is not set
     )
     logging.info(f"Function '{external_id}' created. Waiting for deployment...")
-    function = await_function_deployment(client, external_id, config.deploy_wait_time_sec)
-    logging.info(f"Function '{external_id}' deployed successfully!")
-    return function
+    return await_function_deployment(client, external_id, DEPLOY_WAIT_TIME_SEC)
 
 
 @contextmanager
@@ -120,20 +122,20 @@ def _write_files_to_zip_buffer(zf: ZipFile, directory: Path):
 
 
 def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: str) -> int:
-    logger.info(f"Uploading code from '{config.folder_path}' to '{name}'")
+    logger.info(f"Uploading code from '{config.function_folder}' to '{name}'")
     buf = io.BytesIO()  # TempDir, who needs that?! :rocket:
     with ZipFile(buf, mode="a") as zf:
-        with temporary_chdir(config.folder_path):
+        with temporary_chdir(config.function_folder):
             _write_files_to_zip_buffer(zf, directory=".")
 
-        if config.common_folder_path is not None:
-            with temporary_chdir(config.common_folder_path.parent):  # Note .parent
-                logger.info(f"Added common directory: '{config.common_folder_path}' to the function")
-                _write_files_to_zip_buffer(zf, directory=config.common_folder_path)
+        if config.common_folder is not None:
+            with temporary_chdir(config.common_folder.parent):  # Note .parent
+                logger.info(f"Added common directory: '{config.common_folder}' to the function")
+                _write_files_to_zip_buffer(zf, directory=config.common_folder)
 
     data_set_id = None
     if config.data_set_external_id is not None:
-        # This looks idiotic, but the SDK does not yet support ext_ids for files... facepalm:
+        # This looks idiotic, but the SDK does not yet support data set ext. id for files... facepalm:
         data_set_id = get_data_set_id_from_external_id(client, config.data_set_external_id)
 
     file_meta = client.files.upload_bytes(buf.getvalue(), name=name, external_id=name, data_set_id=data_set_id)
@@ -147,10 +149,7 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 @retry(exceptions=(IOError, FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)  # Also external ID
-
-    if config.overwrite:
-        # upsert was requested. delete schedules, function and files
-        try_delete(client, config.external_id)
+    try_delete(client, config.external_id)
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
