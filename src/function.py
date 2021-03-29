@@ -63,6 +63,7 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
 def try_delete(client: CogniteClient, external_id: str):
     try_delete_function(client, external_id)
     try_delete_function_file(client, get_file_name(external_id))
+    time.sleep(3)
 
 
 def try_delete_function(client: CogniteClient, external_id: str):
@@ -130,7 +131,7 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 
         if config.common_folder is not None:
             with temporary_chdir(config.common_folder.parent):  # Note .parent
-                logger.info(f"Added common directory: '{config.common_folder}' to the function")
+                logger.info(f"- Added common directory: '{config.common_folder}' to the file/function")
                 _write_files_to_zip_buffer(zf, directory=config.common_folder)
 
     data_set_id = None
@@ -138,9 +139,11 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
         # This looks idiotic, but the SDK does not yet support data set ext. id for files... facepalm:
         data_set_id = get_data_set_id_from_external_id(client, config.data_set_external_id)
 
-    file_meta = client.files.upload_bytes(buf.getvalue(), name=name, external_id=name, data_set_id=data_set_id)
+    file_meta = client.files.upload_bytes(
+        buf.getvalue(), name=name, external_id=name, data_set_id=data_set_id, overwrite=True,
+    )
     if file_meta.id is not None:
-        logger.info("Upload successful!")
+        logger.info(f"File upload successful ({name})!")
         return file_meta.id
     raise FunctionDeployError(f"Failed to upload file ({name}) to CDF Files")
 
@@ -153,17 +156,11 @@ def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
-
     except CogniteAPIError as e:
         if "Function externalId duplicated" in e.message:
-            # Function was registered, but an unknown error occurred. Delete and trigger retry:
-            try_delete_function(client, config.external_id)
+            # Function was registered, but an unknown error occurred. Trigger retry:
             raise FunctionDeployError(e.message) from None
         raise  # We don't want to trigger retry for unknown problems
-
-    except (FunctionDeployError, FunctionDeployTimeout):
-        try_delete_function_file(client, zip_file_name)
-        raise
 
 
 def file_exists(client: CogniteClient, external_id: str) -> bool:
