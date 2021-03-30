@@ -90,13 +90,13 @@ def try_delete_function_file(client: CogniteClient, external_id: str):
             client.files.delete(external_id=external_id)
             logger.info(f"- Delete of file '{external_id}' successful!")
         except CogniteAPIError:
-            if file_meta.data_set_id is not None:
-                logger.error(
-                    "Unable to delete file! File is governed by data set with ID: {file_meta.data_set_id}. "
-                    "Make sure your deployment credentials have write/owner access "
-                    "(see README.md in function-action repo). Trying to ignore and continue as "
-                    "this workflow will overwrite the file later."
-                )
+            if file_meta.data_set_id is None:
+                raise  # File is not protected by dataset, so we re-raise immediately
+            logger.error(
+                "Unable to delete file! It is governed by data set with ID: {file_meta.data_set_id}. Make sure "
+                "your deployment credentials have write/owner access (see README.md in function-action repo). "
+                "Trying to ignore and continue as this workflow will overwrite the file later."
+            )
     else:
         logger.info(f"Unable to delete file! External ID: '{external_id}' NOT found!")
 
