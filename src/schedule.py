@@ -28,7 +28,7 @@ def deploy_schedule(client: CogniteClient, function: Function, config: FunctionC
         logger.info("No schedules to attach!")
         return
 
-    logger.info(f"Attaching {len(config.schedules)} to {function.external_id}")
+    logger.info(f"Attaching {len(config.schedules)} schedule(s) to {function.external_id}")
     for schedule in config.schedules:
         client.functions.schedules.create(
             function_external_id=function.external_id,
