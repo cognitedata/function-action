@@ -28,6 +28,11 @@ class FunctionDeployError(Exception):
 
 
 def retrieve_dataset(client: CogniteClient, ext_id: str) -> DataSet:
+    """
+    Assuming internal IDs eventually will (read: should) die, we enforce the use
+    of external IDs in this Github action... but since the SDK (cur 2.15.0)
+    does not support data set external ID for FilesAPI, we need lookup...
+    """
     try:
         ds = client.data_sets.retrieve(external_id=ext_id)
         if ds:

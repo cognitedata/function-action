@@ -18,7 +18,7 @@ Example: if your code has to read assets, and write to timeseries, it will need 
 4. `function_secrets`: The name of a Github secret that holds the base64 encoded JSON dictionary with secrets. (see secrets section)
 5. `schedule_file`: File location inside `function_folder` containing a list of schedules to be attached to your function. Check out the details in the section below. Note: Ignored with warning if pointing to a non-existent file.
 6. `remove_only`: Deletes function along with all attached schedules. Deployment logic is skipped.
-7. `data_set_external_id`: Data set external ID (for FilesAPI) to use for the function-associated file (zipped code folder).
+7. `data_set_external_id`: Data set external ID (for FilesAPI) to use for the function-associated file (zipped code folder). Note: Requires capability 'dataset:READ' for your `cdf_deployment_credentials` and 'files:WRITE' scoped to either that dataset or 'all'. If your data set is WRITE PROTECTED, you also need to add capability 'dataset:OWNER'.
 8. `cpu`: Set fractional number of CPU cores per function. See defaults and allowed values in the [API documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
 9. `memory`: Set memory per function measured in GB. See defaults and allowed values in the [API documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions).
 10. `owner`: Used to specify a function's owner. See allowed number of characters in the [API documentation](https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions)
