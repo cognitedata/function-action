@@ -140,7 +140,11 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
         data_set_id = get_data_set_id_from_external_id(client, config.data_set_external_id)
 
     file_meta = client.files.upload_bytes(
-        buf.getvalue(), name=name, external_id=name, data_set_id=data_set_id, overwrite=True,
+        buf.getvalue(),
+        name=name,
+        external_id=name,
+        data_set_id=data_set_id,
+        overwrite=True,
     )
     if file_meta.id is not None:
         logger.info(f"File upload successful ({name})!")
