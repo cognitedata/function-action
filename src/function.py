@@ -63,34 +63,38 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
 def try_delete(client: CogniteClient, external_id: str):
     try_delete_function(client, external_id)
     try_delete_function_file(client, get_file_name(external_id))
+    # Schedules live on when functions die, so we always clean up:
+    delete_all_schedules_for_ext_id(client, external_id)
     time.sleep(3)
 
 
 def try_delete_function(client: CogniteClient, external_id: str):
-    # Schedules live on when functions die, so we always clean up:
-    delete_all_schedules_for_ext_id(client, external_id)
-
     function = client.functions.retrieve(external_id=external_id)
     if function is not None:
-        logger.info(f"Found existing function '{external_id}'. Deleting ...")
+        logger.info(f"Found existing function '{external_id}'. Deleting...")
         client.functions.delete(external_id=external_id)
-        logger.info(f"Delete of function '{external_id}' successful!")
+        logger.info(f"- Delete of function '{external_id}' successful!")
+    else:
+        logger.info(f"Unable to delete function! External ID: '{external_id}' NOT found!")
 
 
 def try_delete_function_file(client: CogniteClient, external_id: str):
-    if file_exists(client, external_id):
-        logger.info(f"Found existing file {external_id}. Deleting ...")
+    file_meta = client.files.retrieve(external_id=external_id)
+    if file_meta is not None:
+        logger.info(f"Found existing file {external_id}. Deleting...")
         client.files.delete(external_id=external_id)
-        logger.info(f"Did delete file {external_id}.")
+        logger.info(f"- Delete of file '{external_id}' successful!")
+    else:
+        logger.info(f"Unable to delete file! External ID: '{external_id}' NOT found!")
 
 
 def create_function_and_wait(client: CogniteClient, file_id: int, config: FunctionConfig) -> Function:
     external_id, secrets = config.external_id, config.unpacked_secrets
     logger.info(f"Trying to create function '{external_id}'...")
     if secrets:
-        logger.info(f"Adding {len(secrets)} extra secret(s) to the function '{external_id}'")
+        logger.info(f"- Adding {len(secrets)} extra secret(s) to the function '{external_id}'")
     else:
-        logger.info(f"No extra secrets added to function '{external_id}'")
+        logger.info(f"- No extra secrets added to function '{external_id}'")
     client.functions.create(
         name=external_id,
         external_id=external_id,
@@ -165,10 +169,6 @@ def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function
             # Function was registered, but an unknown error occurred. Trigger retry:
             raise FunctionDeployError(e.message) from None
         raise  # We don't want to trigger retry for unknown problems
-
-
-def file_exists(client: CogniteClient, external_id: str) -> bool:
-    return client.files.retrieve(external_id=external_id) is not None
 
 
 def get_file_name(function_name: str) -> str:
