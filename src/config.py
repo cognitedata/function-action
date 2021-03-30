@@ -34,29 +34,40 @@ class TenantConfig(BaseModel):
     def runtime_key(self):
         return self.cdf_runtime_credentials
 
-    @root_validator(skip_on_failure=True)
-    def check_credentials(cls, values):
+    @staticmethod
+    def _verify_credentials(env, values):
         project = values["cdf_project"]
         kwargs = {
             "base_url": values["cdf_base_url"],
             "client_name": "function-action-validator",
             "disable_pypi_version_check": True,
         }
-        for env in ["deployment", "runtime"]:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning)
-                client = CogniteClient(api_key=values[f"cdf_{env}_credentials"], **kwargs)
-            if not client.login.status().logged_in:
-                raise ValueError(f"Can't login with {env} credentials")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            client = CogniteClient(api_key=values[f"cdf_{env}_credentials"], **kwargs)
+        if not client.login.status().logged_in:
+            raise ValueError(f"Can't login with {env} credentials")
 
-            inferred_project = client.login.status().project
-            if project is None:
-                logger.warning(f"Inferred project: {inferred_project} from given {env} credentials ")
-            if inferred_project != project:
-                raise ValueError(
-                    f"Inferred project, {inferred_project}, from the provided {env} credentials "
-                    f"does not match the given project: {project}"
-                )
+        inferred_project = client.login.status().project
+        if project is None:
+            logger.warning(f"Inferred project: {inferred_project} from given {env} credentials ")
+        elif inferred_project != project:
+            raise ValueError(
+                f"Inferred project, {inferred_project}, from the provided {env} credentials "
+                f"does not match the given project: {project}"
+            )
+        return inferred_project
+
+    @root_validator(skip_on_failure=True)
+    def check_credentials(cls, values):
+        deploy_project = cls._verify_credentials("deployment", values)
+        runtime_project = cls._verify_credentials("runtime", values)
+        if deploy_project != runtime_project:
+            raise ValueError(
+                "The deployment- and runtime credentials are for separate projects, "
+                f"deployment: {deploy_project}, runtime: {runtime_project}"
+            )
+        values["cdf_project"] = deploy_project
         return values
 
 
