@@ -24,12 +24,11 @@ def delete_all_schedules_for_ext_id(client: CogniteClient, function_external_id:
 
 
 def deploy_schedule(client: CogniteClient, function: Function, config: FunctionConfig):
-    delete_all_schedules_for_ext_id(client, function.external_id)
-
     if not config.schedules:
-        logger.info("Skipped step of attaching schedules!")
+        logger.info("No schedules to attach!")
         return
 
+    logger.info(f"Attaching {len(config.schedules)} schedule(s) to {function.external_id}")
     for schedule in config.schedules:
         client.functions.schedules.create(
             function_external_id=function.external_id,
@@ -37,4 +36,4 @@ def deploy_schedule(client: CogniteClient, function: Function, config: FunctionC
             name=schedule.name,
             data=schedule.data,
         )
-        logger.info(f"Successfully deployed schedule {schedule.name} with cron expression {schedule.cron}.")
+        logger.info(f"- Schedule '{schedule.name}' with cron: '{schedule.cron}' attached successfully!")

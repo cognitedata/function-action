@@ -2,7 +2,6 @@ import contextlib
 from unittest.mock import MagicMock, call, patch
 
 import pytest
-from cognite.client.data_classes import FileMetadata
 from cognite.experimental.data_classes import Function
 
 from config import DEPLOY_WAIT_TIME_SEC
@@ -11,11 +10,9 @@ from function import (
     FunctionDeployTimeout,
     await_function_deployment,
     create_function_and_wait,
-    file_exists,
     get_file_name,
     try_delete,
     try_delete_function,
-    try_delete_function_file,
     upload_and_create,
 )
 
@@ -45,13 +42,15 @@ def test_await_function_deployment(retrieve_status, wait_time_seconds, expectati
 def test_try_delete(
     try_delete_function_file_mock,
     try_delete_function,
-    cognite_client_mock,
+    cognite_experimental_client_mock,
 ):
     file_name = "file/external_id"
-    try_delete(cognite_client_mock, file_name)
+    try_delete(cognite_experimental_client_mock, file_name)
 
-    assert try_delete_function.call_args_list == [call(cognite_client_mock, file_name)]
-    assert try_delete_function_file_mock.call_args_list == [call(cognite_client_mock, "file-external_id.zip")]
+    assert try_delete_function.call_args_list == [call(cognite_experimental_client_mock, file_name)]
+    assert try_delete_function_file_mock.call_args_list == [
+        call(cognite_experimental_client_mock, "file-external_id.zip")
+    ]
 
 
 @pytest.mark.parametrize(
@@ -62,18 +61,6 @@ def test_try_delete_function(function, expected_delete_calls, cognite_experiment
     cognite_experimental_client_mock.functions.retrieve.return_value = function
     try_delete_function(cognite_experimental_client_mock, "some id")
     assert cognite_experimental_client_mock.functions.delete.call_args_list == expected_delete_calls
-
-
-@pytest.mark.parametrize(
-    "exists, expected_delete_calls",
-    [(True, [call(external_id="some id")]), (False, [])],
-)
-@patch("function.file_exists")
-def test_try_delete_function_file(file_exists_mock, cognite_client_mock, exists, expected_delete_calls):
-    file_exists_mock.return_value = exists
-
-    try_delete_function_file(cognite_client_mock, "some id")
-    assert cognite_client_mock.files.delete.call_args_list == expected_delete_calls
 
 
 @pytest.mark.parametrize(
@@ -110,12 +97,6 @@ def test_upload_and_create_exception(
 
     with pytest.raises(exception):
         upload_and_create(cognite_client_mock, valid_config)
-
-
-@pytest.mark.parametrize("response, expected", [(FileMetadata(), True), (None, False)])
-def test_file_exist(response, expected, cognite_client_mock):
-    cognite_client_mock.files.retrieve.return_value = response
-    assert file_exists(cognite_client_mock, "") == expected
 
 
 @pytest.mark.parametrize(
