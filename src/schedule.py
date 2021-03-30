@@ -36,4 +36,4 @@ def deploy_schedule(client: CogniteClient, function: Function, config: FunctionC
             name=schedule.name,
             data=schedule.data,
         )
-        logger.info(f"- Schedule '{schedule.name}' with cron: '{schedule.cron}' deployed successfully!")
+        logger.info(f"- Schedule '{schedule.name}' with cron: '{schedule.cron}' attached successfully!")
