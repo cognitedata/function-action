@@ -93,7 +93,7 @@ def try_delete_function_file(client: CogniteClient, external_id: str):
             if file_meta.data_set_id is None:
                 raise  # File is not protected by dataset, so we re-raise immediately
             logger.error(
-                "Unable to delete file! It is governed by data set with ID: {file_meta.data_set_id}. Make sure "
+                f"Unable to delete file! It is governed by data set with ID: {file_meta.data_set_id}. Make sure "
                 "your deployment credentials have write/owner access (see README.md in function-action repo). "
                 "Trying to ignore and continue as this workflow will overwrite the file later."
             )
