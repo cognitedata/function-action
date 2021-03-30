@@ -142,6 +142,9 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
     if config.data_set_external_id is not None:
         # This looks idiotic, but the SDK does not yet support data set ext. id for files... facepalm:
         data_set_id = get_data_set_id_from_external_id(client, config.data_set_external_id)
+        logger.info(f"- Using dataset '{config.data_set_external_id}' to govern the file")
+    else:
+        logger.info(f"- No dataset will be used to govern the file!")
 
     file_meta = client.files.upload_bytes(
         buf.getvalue(),
