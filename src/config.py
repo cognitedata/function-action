@@ -60,14 +60,14 @@ class TenantConfig(BaseModel):
 
     @root_validator(skip_on_failure=True)
     def check_credentials(cls, values):
-        deploy_key = cls._verify_credentials("deployment", values)
-        runtime_key = cls._verify_credentials("runtime", values)
-        if deploy_key != runtime_key:
+        deploy_project = cls._verify_credentials("deployment", values)
+        runtime_project = cls._verify_credentials("runtime", values)
+        if deploy_project != runtime_project:
             raise ValueError(
                 "The deployment- and runtime credentials are for separate projects, "
-                f"deployment: {deploy_key}, runtime: {runtime_key}"
+                f"deployment: {deploy_project}, runtime: {runtime_project}"
             )
-        values["cdf_project"] = deploy_key
+        values["cdf_project"] = deploy_project
         return values
 
 
