@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Union
 from zipfile import ZipFile
 
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.data_classes import DataSet, FileMetadata
+from cognite.client.exceptions import CogniteAPIError
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
 from retry import retry
@@ -26,19 +27,22 @@ class FunctionDeployError(Exception):
     pass
 
 
-def get_data_set_id_from_external_id(client: CogniteClient, ext_id: str) -> int:
+def retrieve_dataset(client: CogniteClient, ext_id: str) -> DataSet:
     """
     Assuming internal IDs eventually will (read: should) die, we enforce the use
     of external IDs in this Github action... but since the SDK (cur 2.15.0)
     does not support data set external ID for FilesAPI, we need lookup...
     """
-    ds = client.data_sets.retrieve(external_id=ext_id)
-    if ds:
-        return ds.id
-    raise CogniteNotFoundError(
-        f"Data set external ID: '{ext_id}' not found -OR- you don't have the required capabilities scoped to that "
-        "dataset: OWNER (for write-protected) or WRITE (for non-write-protected)."
-    )
+    try:
+        ds = client.data_sets.retrieve(external_id=ext_id)
+        if ds:
+            return ds
+        raise ValueError(f"No dataset exists with external ID: '{ext_id}'")
+
+    except CogniteAPIError as exc:
+        err_msg = "Unable to retrieve dataset: Deployment key is missing capability 'dataset:READ'."
+        logger.error(err_msg)
+        raise CogniteAPIError(err_msg, exc.code, exc.x_request_id) from None
 
 
 def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Function:
@@ -82,8 +86,17 @@ def try_delete_function_file(client: CogniteClient, external_id: str):
     file_meta = client.files.retrieve(external_id=external_id)
     if file_meta is not None:
         logger.info(f"Found existing file {external_id}. Deleting...")
-        client.files.delete(external_id=external_id)
-        logger.info(f"- Delete of file '{external_id}' successful!")
+        try:
+            client.files.delete(external_id=external_id)
+            logger.info(f"- Delete of file '{external_id}' successful!")
+        except CogniteAPIError:
+            if file_meta.data_set_id is None:
+                raise  # File is not protected by dataset, so we re-raise immediately
+            logger.error(
+                f"Unable to delete file! It is governed by data set with ID: {file_meta.data_set_id}. Make sure "
+                "your deployment credentials have write/owner access (see README.md in function-action repo). "
+                "Trying to ignore and continue as this workflow will overwrite the file later."
+            )
     else:
         logger.info(f"Unable to delete file! External ID: '{external_id}' NOT found!")
 
@@ -126,6 +139,33 @@ def _write_files_to_zip_buffer(zf: ZipFile, directory: Path):
             zf.write(Path(dirpath) / f)
 
 
+def upload_zipped_code_to_files(client, file_bytes: bytes, name: str, ds: DataSet) -> FileMetadata:
+    try:
+        return client.files.upload_bytes(
+            file_bytes,
+            name=name,
+            external_id=name,
+            data_set_id=ds.id,
+            overwrite=True,
+        )
+    except CogniteAPIError as exc:
+        if ds.id is None:
+            # Error is not dataset related, so we immediately re-raise
+            raise
+        if ds.write_protected:
+            err_msg = (
+                "Unable to upload file to WRITE-PROTECTED dataset: Deployment key MUST have capability "
+                "'dataset:OWNER' (and have 'files:WRITE' scoped to the same dataset OR all files)."
+            )
+        else:
+            err_msg = (
+                "Unable to upload file to dataset: Deployment key must have capability "
+                "'files:WRITE' scoped to the same dataset OR all files."
+            )
+        logger.error(err_msg)
+        raise CogniteAPIError(err_msg, exc.code, exc.x_request_id) from None
+
+
 def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: str) -> int:
     logger.info(f"Uploading code from '{config.function_folder}' to '{name}'")
     buf = io.BytesIO()  # TempDir, who needs that?! :rocket:
@@ -138,20 +178,18 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
                 logger.info(f"- Added common directory: '{config.common_folder}' to the file/function")
                 _write_files_to_zip_buffer(zf, directory=config.common_folder)
 
-    data_set_id = None
+    ds = DataSet(id=None)
     if config.data_set_external_id is not None:
-        # This looks idiotic, but the SDK does not yet support data set ext. id for files... facepalm:
-        data_set_id = get_data_set_id_from_external_id(client, config.data_set_external_id)
+        ds = retrieve_dataset(client, config.data_set_external_id)
+        logger.info(
+            f"- Using dataset '{ds.external_id}' to govern the file (has write protection: {ds.write_protected})."
+        )
+    else:
+        logger.info("- No dataset will be used to govern the file!")
 
-    file_meta = client.files.upload_bytes(
-        buf.getvalue(),
-        name=name,
-        external_id=name,
-        data_set_id=data_set_id,
-        overwrite=True,
-    )
+    file_meta = upload_zipped_code_to_files(client, buf.getvalue(), name, ds)
     if file_meta.id is not None:
-        logger.info(f"File upload successful ({name})!")
+        logger.info(f"- File uploaded successfully ({name})!")
         return file_meta.id
     raise FunctionDeployError(f"Failed to upload file ({name}) to CDF Files")
 
