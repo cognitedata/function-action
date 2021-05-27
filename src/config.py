@@ -110,7 +110,7 @@ class FunctionConfig(BaseModel):
     function_name: non_empty_str
     function_folder: Path
     function_secrets: non_empty_str = None
-    function_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- ]+\.py$")  # noqa: F722
+    function_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- ]+\.(py|js)$")  # noqa: F722
     schedule_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- /]+\.ya?ml$") = None  # noqa: F722
     data_set_external_id: non_empty_str = None
     common_folder: Path = None
