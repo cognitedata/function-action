@@ -61,7 +61,9 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
             raise FunctionDeployError(function.error["trace"])
         time.sleep(5)
 
-    raise FunctionDeployTimeout(f"Function {external_id} did not deploy within {wait_time_sec} seconds.")
+    err = f"Function {external_id} (ID: {function.id}) did not deploy within {wait_time_sec} seconds."
+    logger.error(err)
+    raise FunctionDeployTimeout(err)
 
 
 def try_delete(client: CogniteClient, external_id: str):
