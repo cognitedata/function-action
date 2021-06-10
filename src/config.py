@@ -36,7 +36,6 @@ class TenantConfig(BaseModel):
 
     @staticmethod
     def _verify_credentials(env, values):
-        project = values["cdf_project"]
         kwargs = {
             "base_url": values["cdf_base_url"],
             "client_name": "function-action-validator",
@@ -45,16 +44,23 @@ class TenantConfig(BaseModel):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             client = CogniteClient(api_key=values[f"cdf_{env}_credentials"], **kwargs)
-        if not client.login.status().logged_in:
-            raise ValueError(f"Can't login with {env} credentials")
 
-        inferred_project = client.login.status().project
-        if project is None:
-            logger.warning(f"Inferred project: {inferred_project} from given {env} credentials ")
-        elif inferred_project != project:
+        login_status = client.login.status()
+        inferred_project = login_status.project
+
+        if login_status.logged_in:
+            logger.info(
+                f"{env.capitalize()} API-key successfully logged in! (User/service account: '{login_status.user}', "
+                f"project '{inferred_project}', base-URL '{values['cdf_base_url']}')"
+            )
+        else:
+            raise ValueError(f"Can't login with {env} credentials (base-URL used: '{values['cdf_base_url']}')")
+
+        given_project = values["cdf_project"]
+        if given_project is not None and inferred_project != given_project:
             raise ValueError(
                 f"Inferred project, {inferred_project}, from the provided {env} credentials "
-                f"does not match the given project: {project}"
+                f"does not match the given project: {given_project}"
             )
         return inferred_project
 
