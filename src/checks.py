@@ -12,8 +12,10 @@ HANDLE_ARGS = ("data", "client", "secrets", "function_call_info")
 
 def run_checks(config: FunctionConfig) -> None:
     # Python-only checks:
-    if config.function_file.endswith(".py"):
-        _check_handle_args(config.function_file)
+    logger.info(f"Running checks on file '{config.function_file}'. Rest of config:")
+    logger.info(str(config))
+    # if config.function_file.endswith(".py"):
+    _check_handle_args(config.function_file)
 
 
 def _check_handle_args(filename: str, fn_name: str = "handle") -> None:
