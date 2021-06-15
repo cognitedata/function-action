@@ -16,7 +16,6 @@ class FunctionValidationError(Exception):
 
 def run_checks(config: FunctionConfig) -> None:
     # Python-only checks:
-    logger.info(f"Running checks on file '{config.function_file}'. Rest of config:")
     if config.function_file.endswith(".py"):
         _check_handle_args(config.function_folder / config.function_file)
 
