@@ -1,4 +1,4 @@
-# gcr.io/distroless/python3-debian10 (runtime env is using 3.7 and that's important for native dependencies)
+# gcr.io/distroless/python3-debian10 (runtime env is using 3.8 and that's important for native dependencies)
 FROM python:3.8-slim AS builder
 
 ADD src /app
