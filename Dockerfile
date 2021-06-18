@@ -19,4 +19,4 @@ RUN pip3 install --target=/app -r /requirements.txt --upgrade
 FROM python:3.8-buster
 COPY --from=builder /app /app
 ENV PYTHONPATH /app
-CMD ["python", "./app/index.py"]
+CMD ["python", "/app/index.py"]
