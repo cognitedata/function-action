@@ -1,8 +1,8 @@
 # # gcr.io/distroless/python3-debian10 (runtime env is using 3.7 and that's important for native dependencies)
 FROM python:3.8-slim AS builder
 
-# Install python
-RUN apt-install python3.8-minimal libpython3.8-stdlib python3.8-distutils
+# # Install python
+# RUN apt-install python3.8-minimal libpython3.8-stdlib python3.8-distutils
 
 ADD src /app
 WORKDIR /
