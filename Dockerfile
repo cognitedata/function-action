@@ -1,6 +1,6 @@
 # # gcr.io/distroless/python3-debian10 (runtime env is using 3.7 and that's important for native dependencies)
 # FROM python:3.7-slim AS builder
-FROM snakepacker/python/base AS builder
+FROM docker.pkg.github.com/snakepacker/python/3.8 AS builder
 
 # Install python
 RUN apt-install python3.8-minimal libpython3.8-stdlib python3.8-distutils
@@ -25,7 +25,7 @@ RUN pip3 install --target=/app -r /requirements.txt --upgrade
 # A distroless container image with Python and some basics like SSL certificates
 # # https://github.com/GoogleContainerTools/distroless
 # # FROM gcr.io/distroless/python3
-FROM snakepacker/python:3.8
+FROM docker.pkg.github.com/snakepacker/python/3.8
 COPY --from=builder /app /app
 ENV PYTHONPATH /app
 CMD ["/app/index.py"]
