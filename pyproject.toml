@@ -16,13 +16,13 @@ include_trailing_comma=true    # corresponds to -tc flag
 skip_glob = '^((?!py$).)*$'    # this makes sort all Python files
 
 [tool.poetry.dependencies]
-python = "^3.7"
-cognite-sdk = "^2.19"
+python = "^3.8"
 cognite-sdk-experimental = "^0.54"
 pydantic = "^1.8"
 python-crontab = "^2.5"
 PyYAML = "^5.3"
 retry = "^0.9"
+humanize = "^3.9"
 
 [tool.poetry.dev-dependencies]
 bandit = "1.6.2"

@@ -9,6 +9,7 @@ from cognite.client.data_classes import DataSet, FileMetadata
 from cognite.client.exceptions import CogniteAPIError
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
+from humanize.time import precisedelta
 from retry import retry
 
 from config import DEPLOY_WAIT_TIME_SEC, FunctionConfig
@@ -53,14 +54,14 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
             logger.warning(err)
             raise FunctionDeployError(err)
         elif function.status == "Ready":
-            logger.info(f"Function deployment successful! Deployment took {time.time()-t0:.2f} seconds")
+            logger.info(f"Function deployment successful! Deployment took {precisedelta(time.time()-t0)}")
             return function
         elif function.status == "Failed":
-            logger.warning(f"Deployment failed after {time.time()-t0:.2f} seconds! Error: {function.error['trace']}")
+            logger.warning(f"Deployment failed after {precisedelta(time.time()-t0)}! Error: {function.error['trace']}")
             raise FunctionDeployError(function.error["trace"])
         time.sleep(5)
 
-    err = f"Function {external_id} (ID: {function.id}) did not deploy within {wait_time_sec} seconds."
+    err = f"Function {external_id} (ID: {function.id}) did not deploy within {precisedelta(wait_time_sec)}."
     logger.error(err)
     raise FunctionDeployTimeout(err)
 
