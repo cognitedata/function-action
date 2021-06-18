@@ -2,9 +2,7 @@ import io
 import logging
 import os
 import time
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Union
 from zipfile import ZipFile
 
 from cognite.client.data_classes import DataSet, FileMetadata
@@ -15,6 +13,7 @@ from retry import retry
 
 from config import DEPLOY_WAIT_TIME_SEC, FunctionConfig
 from schedule import delete_all_schedules_for_ext_id
+from utils import temporary_chdir
 
 logger = logging.getLogger(__name__)
 
@@ -122,16 +121,6 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
     )
     logging.info(f"Function '{external_id}' created. Waiting for deployment...")
     return await_function_deployment(client, external_id, DEPLOY_WAIT_TIME_SEC)
-
-
-@contextmanager
-def temporary_chdir(path: Union[str, Path]):
-    old_path = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(old_path)
 
 
 def _write_files_to_zip_buffer(zf: ZipFile, directory: Path):
