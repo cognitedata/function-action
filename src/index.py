@@ -3,6 +3,7 @@ import os
 
 import yaml
 
+from checks import run_checks
 from config import FunctionConfig, TenantConfig, create_experimental_cognite_client
 from function import try_delete, upload_and_create
 from github_log_handler import GitHubLogHandler
@@ -23,7 +24,8 @@ def main(config: FunctionConfig) -> None:
         try_delete(client, config.external_id)
         return
 
-    # Zip files, upload to Files and create CogFunc:
+    # Run checks, then zip together and upload the code files, then create Function:
+    run_checks(config)
     function = upload_and_create(client, config)
     logger.info(f"Successfully created and deployed function {config.external_id} with id {function.id}")
     deploy_schedule(client, function, config)

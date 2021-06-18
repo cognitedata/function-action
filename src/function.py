@@ -2,19 +2,19 @@ import io
 import logging
 import os
 import time
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Union
 from zipfile import ZipFile
 
 from cognite.client.data_classes import DataSet, FileMetadata
 from cognite.client.exceptions import CogniteAPIError
 from cognite.experimental import CogniteClient
 from cognite.experimental.data_classes import Function
+from humanize.time import precisedelta
 from retry import retry
 
 from config import DEPLOY_WAIT_TIME_SEC, FunctionConfig
 from schedule import delete_all_schedules_for_ext_id
+from utils import temporary_chdir
 
 logger = logging.getLogger(__name__)
 
@@ -54,14 +54,14 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
             logger.warning(err)
             raise FunctionDeployError(err)
         elif function.status == "Ready":
-            logger.info(f"Function deployment successful! Deployment took {time.time()-t0:.2f} seconds")
+            logger.info(f"Function deployment successful! Deployment took {precisedelta(time.time()-t0)}")
             return function
         elif function.status == "Failed":
-            logger.warning(f"Deployment failed after {time.time()-t0:.2f} seconds! Error: {function.error['trace']}")
+            logger.warning(f"Deployment failed after {precisedelta(time.time()-t0)}! Error: {function.error['trace']}")
             raise FunctionDeployError(function.error["trace"])
         time.sleep(5)
 
-    err = f"Function {external_id} (ID: {function.id}) did not deploy within {wait_time_sec} seconds."
+    err = f"Function {external_id} (ID: {function.id}) did not deploy within {precisedelta(wait_time_sec)}."
     logger.error(err)
     raise FunctionDeployTimeout(err)
 
@@ -122,16 +122,6 @@ def create_function_and_wait(client: CogniteClient, file_id: int, config: Functi
     )
     logging.info(f"Function '{external_id}' created. Waiting for deployment...")
     return await_function_deployment(client, external_id, DEPLOY_WAIT_TIME_SEC)
-
-
-@contextmanager
-def temporary_chdir(path: Union[str, Path]):
-    old_path = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(old_path)
 
 
 def _write_files_to_zip_buffer(zf: ZipFile, directory: Path):
