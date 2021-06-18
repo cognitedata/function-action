@@ -1,5 +1,5 @@
-# # gcr.io/distroless/python3-debian10 (runtime env is using 3.7 and that's important for native dependencies)
-FROM python:3.8-slim AS builder
+# gcr.io/distroless/python3-debian10 (runtime env is using 3.7 and that's important for native dependencies)
+FROM python:3.7-slim AS builder
 
 ADD src /app
 WORKDIR /
@@ -19,9 +19,8 @@ RUN poetry export -f requirements.txt --output /requirements.txt
 RUN pip3 install --target=/app -r /requirements.txt --upgrade
 
 # A distroless container image with Python and some basics like SSL certificates
-# # https://github.com/GoogleContainerTools/distroless
-FROM gcr.io/distroless/python3
-RUN apt-install python3.8-minimal libpython3.8-stdlib python3.8-distutils
+# https://github.com/GoogleContainerTools/distroless
+FROM gcr.io/distroless/python3-debian10
 COPY --from=builder /app /app
 ENV PYTHONPATH /app
 CMD ["/app/index.py"]
