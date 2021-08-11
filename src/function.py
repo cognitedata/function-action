@@ -190,7 +190,9 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 @retry(exceptions=(IOError, FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)  # Also external ID
-    try_delete(client, config.external_id)
+    if config.remove_schedules:
+        logger.info(f"Removing schedules for function '{config.external_id}'")
+        try_delete(client, config.external_id)
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
@@ -203,4 +205,5 @@ def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function
 
 def get_file_name(function_name: str) -> str:
     # TODO: Kindly ask Cognite Functions to make this into a function...
-    return function_name.replace("/", "-") + ".zip"  # forward-slash is not allowed in file names
+    # forward-slash is not allowed in file names
+    return function_name.replace("/", "-") + ".zip"
