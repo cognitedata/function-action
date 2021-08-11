@@ -66,11 +66,12 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
     raise FunctionDeployTimeout(err)
 
 
-def try_delete(client: CogniteClient, external_id: str):
+def try_delete(client: CogniteClient, external_id: str, remove_schedules: bool = True):
     try_delete_function(client, external_id)
     try_delete_function_file(client, get_file_name(external_id))
     # Schedules live on when functions die, so we always clean up:
-    delete_all_schedules_for_ext_id(client, external_id)
+    if remove_schedules:
+        delete_all_schedules_for_ext_id(client, external_id)
     time.sleep(3)
 
 
@@ -190,9 +191,7 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 @retry(exceptions=(IOError, FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
     zip_file_name = get_file_name(config.external_id)  # Also external ID
-    if config.remove_schedules:
-        logger.info(f"Removing schedules for function '{config.external_id}'")
-        try_delete(client, config.external_id)
+    try_delete(client, config.external_id, remove_schedules=config.remove_schedules)
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
