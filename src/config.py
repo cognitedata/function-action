@@ -122,6 +122,7 @@ class FunctionConfig(BaseModel):
     common_folder: Path = None
     tenant: TenantConfig
     remove_only: bool = False
+    remove_schedules: bool = True
     cpu: float = None
     memory: float = None
     owner: constr(min_length=1, max_length=128, strip_whitespace=True) = None
@@ -169,7 +170,8 @@ class FunctionConfig(BaseModel):
             all_schedules = yaml.safe_load(f)
         return [
             ScheduleConfig(
-                cron=schedule.get("cron"),  # If missing, we let Pydantic handle it
+                # If missing, we let Pydantic handle it
+                cron=schedule.get("cron"),
                 name=self.external_id + ":" + schedule.get("name", f"undefined-{i}"),
                 data=schedule.get("data"),
             )

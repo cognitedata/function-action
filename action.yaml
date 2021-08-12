@@ -43,8 +43,12 @@ inputs:
             to 'common' (if it exists).
         required: false
     remove_only:
-        description: Removes the function and all schedules linked to it!
+        description: Removes the function and all schedules linked to it
         default: false
+        required: false
+    remove_schedules:
+        description: Cleans up all the schedule linked to a function
+        default: true
         required: false
     cpu:
         description: Set number of CPU cores per function, e.g. 0.5.
