@@ -13,7 +13,7 @@ from humanize.time import precisedelta
 from retry import retry
 
 from config import DEPLOY_WAIT_TIME_SEC, FunctionConfig
-from schedule import delete_all_schedules_for_ext_id
+from schedule import delete_function_schedules
 from utils import temporary_chdir
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,12 @@ class FunctionDeployTimeout(Exception):
 
 class FunctionDeployError(Exception):
     pass
+
+
+class FunctionStatus:
+    # Not an exhaustive list, only what's needed:
+    FAILED = "Failed"
+    READY = "Ready"
 
 
 def retrieve_dataset(client: CogniteClient, ext_id: str) -> DataSet:
@@ -50,15 +56,18 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
     while time.time() <= t0 + wait_time_sec:
         function = client.functions.retrieve(external_id=external_id)
         if function is None:  # Should not ever happen... :shrug:
-            err = f"No function with external_id={external_id} exists!"
+            err = f"No function with {external_id=} exists!"
             logger.warning(err)
             raise FunctionDeployError(err)
-        elif function.status == "Ready":
+
+        elif function.status == FunctionStatus.READY:
             logger.info(f"Function deployment successful! Deployment took {precisedelta(time.time()-t0)}")
             return function
-        elif function.status == "Failed":
-            logger.warning(f"Deployment failed after {precisedelta(time.time()-t0)}! Error: {function.error['trace']}")
-            raise FunctionDeployError(function.error["trace"])
+
+        elif function.status == FunctionStatus.FAILED:
+            err_msg = f"Error message: {function.error['message']}.\nTrace: {function.error['trace']}"
+            logger.warning(f"Deployment failed after {precisedelta(time.time()-t0)}! {err_msg}")
+            raise FunctionDeployError(err_msg)
         time.sleep(5)
 
     err = f"Function {external_id} (ID: {function.id}) did not deploy within {precisedelta(wait_time_sec)}."
@@ -66,16 +75,16 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
     raise FunctionDeployTimeout(err)
 
 
-def try_delete(client: CogniteClient, external_id: str, remove_schedules: bool = True):
-    try_delete_function(client, external_id)
-    try_delete_function_file(client, get_file_name(external_id))
-    # Schedules live on when functions die, so we always clean up:
+def delete_single_cognite_function(client: CogniteClient, external_id: str, remove_schedules: bool):
+    delete_function(client, external_id)
+    delete_function_file(client, get_file_name(external_id))
+    # Schedules live on when functions die, so we clean them up only if specified:
     if remove_schedules:
-        delete_all_schedules_for_ext_id(client, external_id)
+        delete_function_schedules(client, external_id)
     time.sleep(3)
 
 
-def try_delete_function(client: CogniteClient, external_id: str):
+def delete_function(client: CogniteClient, external_id: str):
     function = client.functions.retrieve(external_id=external_id)
     if function is not None:
         logger.info(f"Found existing function '{external_id}'. Deleting...")
@@ -85,7 +94,7 @@ def try_delete_function(client: CogniteClient, external_id: str):
         logger.info(f"Unable to delete function! External ID: '{external_id}' NOT found!")
 
 
-def try_delete_function_file(client: CogniteClient, external_id: str):
+def delete_function_file(client: CogniteClient, external_id: str):
     file_meta = client.files.retrieve(external_id=external_id)
     if file_meta is not None:
         logger.info(f"Found existing file {external_id}. Deleting...")
@@ -189,9 +198,9 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 
 # Note: Do NOT catch CogniteNotFoundError (used in data set check, if it fails, it will always fail)
 @retry(exceptions=(IOError, FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
-def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function:
-    zip_file_name = get_file_name(config.external_id)  # Also external ID
-    try_delete(client, config.external_id, remove_schedules=config.remove_schedules)
+def upload_and_create_function(client: CogniteClient, config: FunctionConfig) -> Function:
+    delete_single_cognite_function(client, config.external_id, config.remove_schedules)
+    zip_file_name = get_file_name(config.external_id)  # Also file external ID
     try:
         file_id = zip_and_upload_folder(client, config, zip_file_name)
         return create_function_and_wait(client=client, file_id=file_id, config=config)
@@ -203,6 +212,4 @@ def upload_and_create(client: CogniteClient, config: FunctionConfig) -> Function
 
 
 def get_file_name(function_name: str) -> str:
-    # TODO: Kindly ask Cognite Functions to make this into a function...
-    # forward-slash is not allowed in file names
-    return function_name.replace("/", "-") + ".zip"
+    return function_name.replace("/", "-") + ".zip"  # Forward-slash is not allowed in file names

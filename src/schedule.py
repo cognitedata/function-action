@@ -8,12 +8,7 @@ from config import FunctionConfig
 logger = logging.getLogger(__name__)
 
 
-def delete_all_schedules_for_ext_id(client: CogniteClient, function_external_id: str):
-    """
-    We want to delete ALL existing schedules since we don't keep state anywhere and we want to wipe:
-      1. Those we are going to recreate
-      2. Those removed permanently
-    """
+def delete_function_schedules(client: CogniteClient, function_external_id: str):
     all_schedules = client.functions.schedules.list(function_external_id=function_external_id, limit=None)
     if all_schedules:
         for s in all_schedules:  # TODO: Experimental SDK does not support "delete multiple"

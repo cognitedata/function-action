@@ -5,7 +5,7 @@ import yaml
 
 from checks import run_checks
 from config import FunctionConfig, TenantConfig, create_experimental_cognite_client
-from function import try_delete, upload_and_create
+from function import delete_single_cognite_function, upload_and_create_function
 from github_log_handler import GitHubLogHandler
 from schedule import deploy_schedule
 
@@ -20,13 +20,13 @@ logger = logging.getLogger(__name__)
 def main(config: FunctionConfig) -> None:
     client = create_experimental_cognite_client(config.tenant)
     if config.remove_only:
-        # Delete old function and file:
-        try_delete(client, config.external_id)
+        # Delete old function, file and schedules:
+        delete_single_cognite_function(client, config.external_id, remove_schedules=True)
         return
 
     # Run checks, then zip together and upload the code files, then create Function:
     run_checks(config)
-    function = upload_and_create(client, config)
+    function = upload_and_create_function(client, config)
     logger.info(f"Successfully created and deployed function {config.external_id} with id {function.id}")
     deploy_schedule(client, function, config)
 
