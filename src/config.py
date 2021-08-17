@@ -15,16 +15,16 @@ from pydantic import BaseModel, constr, root_validator, validator
 logger = logging.getLogger(__name__)
 
 # Pydantic fields:
-non_empty_str = constr(min_length=1, strip_whitespace=True)
+NonEmptyString = constr(min_length=1, strip_whitespace=True)
 
 DEPLOY_WAIT_TIME_SEC = 1200  # 20 minutes
 
 
 class TenantConfig(BaseModel):
-    cdf_project: non_empty_str = None
-    cdf_deployment_credentials: non_empty_str
-    cdf_runtime_credentials: non_empty_str
-    cdf_base_url: non_empty_str
+    cdf_project: NonEmptyString = None
+    cdf_deployment_credentials: NonEmptyString
+    cdf_runtime_credentials: NonEmptyString
+    cdf_base_url: NonEmptyString
 
     @property
     def deployment_key(self):
@@ -88,8 +88,8 @@ def create_experimental_cognite_client(config: TenantConfig) -> ExpCogniteClient
 
 
 class ScheduleConfig(BaseModel):
-    name: non_empty_str
-    cron: non_empty_str
+    name: NonEmptyString
+    cron: NonEmptyString
     data: Optional[Dict]
 
     @validator("cron")
@@ -113,12 +113,12 @@ def verify_path_is_directory(path):
 
 
 class FunctionConfig(BaseModel):
-    function_name: non_empty_str
+    function_name: NonEmptyString
     function_folder: Path
-    function_secrets: non_empty_str = None
+    function_secrets: NonEmptyString = None
     function_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- ]+\.(py|js)$")  # noqa: F722
     schedule_file: constr(min_length=1, strip_whitespace=True, regex=r"^[\w\- /]+\.ya?ml$") = None  # noqa: F722
-    data_set_external_id: non_empty_str = None
+    data_set_external_id: NonEmptyString = None
     common_folder: Path = None
     tenant: TenantConfig
     remove_only: bool = False
@@ -161,6 +161,17 @@ class FunctionConfig(BaseModel):
             logger.warning(f"Ignoring given schedule file '{schedule_file}', path does not exist: {path.absolute()}")
         return values
 
+    @root_validator(skip_on_failure=True)
+    def verify_remove_params(cls, values):
+        remove_only = values["remove_only"]
+        remove_schedules = values["remove_schedules"]
+        if remove_only and not remove_schedules:
+            raise ValueError(
+                f"Passing '{remove_only=}' removes all schedules, but '{remove_schedules=}' was also passed, "
+                "which is incompatible!"
+            )
+        return values
+
     @property
     def schedules(self) -> List[ScheduleConfig]:
         if self.schedule_file is None:
@@ -170,8 +181,7 @@ class FunctionConfig(BaseModel):
             all_schedules = yaml.safe_load(f)
         return [
             ScheduleConfig(
-                # If missing, we let Pydantic handle it
-                cron=schedule.get("cron"),
+                cron=schedule.get("cron"),  # If missing, we let Pydantic handle it
                 name=self.external_id + ":" + schedule.get("name", f"undefined-{i}"),
                 data=schedule.get("data"),
             )

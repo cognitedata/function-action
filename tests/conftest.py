@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -8,7 +7,7 @@ from cognite.client.testing import monkeypatch_cognite_client
 from cognite.experimental import CogniteClient
 from cognite.experimental._api.functions import FunctionsAPI, FunctionSchedulesAPI
 
-from config import FunctionConfig, TenantConfig
+from config import FunctionConfig
 
 
 class ExperimentalCogniteClientMock(MagicMock):
