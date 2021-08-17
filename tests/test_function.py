@@ -29,7 +29,7 @@ from function import (
     ],
 )
 def test_await_function_deployment(retrieve_status, wait_time_seconds, expectation, cognite_experimental_client_mock):
-    responses = [Function(status=status, error={"trace": "some_error"}) for status in retrieve_status]
+    responses = [Function(status=status, error={"trace": "foo", "message": "bar"}) for status in retrieve_status]
     cognite_experimental_client_mock.functions.retrieve.side_effect = responses
     with expectation:
         r = await_function_deployment(cognite_experimental_client_mock, "", wait_time_seconds)
@@ -45,7 +45,7 @@ def test_delete_single_cognite_function(
     cognite_experimental_client_mock,
 ):
     file_name = "file/external_id"
-    delete_single_cognite_function(cognite_experimental_client_mock, file_name)
+    delete_single_cognite_function(cognite_experimental_client_mock, file_name, remove_schedules=True)
 
     assert delete_function.call_args_list == [call(cognite_experimental_client_mock, file_name)]
     assert delete_function_file_mock.call_args_list == [call(cognite_experimental_client_mock, "file-external_id.zip")]
