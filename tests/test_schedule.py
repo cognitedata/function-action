@@ -7,7 +7,7 @@ def test_deploy_schedules(cognite_experimental_client_mock, valid_config):
     function_mock = MagicMock()
     function_mock.external_id = valid_config.external_id
 
-    deploy_schedules(cognite_experimental_client_mock, function_mock, valid_config)
+    deploy_schedules(cognite_experimental_client_mock, function_mock, valid_config.schedules)
 
     assert cognite_experimental_client_mock.functions.schedules.create.call_args_list == [
         call(
