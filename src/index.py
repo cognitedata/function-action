@@ -7,7 +7,7 @@ from checks import run_checks
 from config import FunctionConfig, TenantConfig, create_experimental_cognite_client
 from function import delete_single_cognite_function, upload_and_create_function
 from github_log_handler import GitHubLogHandler
-from schedule import deploy_schedule
+from schedule import deploy_schedules
 
 # Configure logging:
 root_logger = logging.getLogger()
@@ -28,8 +28,17 @@ def main(config: FunctionConfig) -> None:
     run_checks(config)
     function = upload_and_create_function(client, config)
     logger.info(f"Successfully created and deployed function {config.external_id} with id {function.id}")
-    deploy_schedule(client, function, config)
-
+    if config.remove_schedules:
+        # Normal operation is to always remove all attached schedules and then re-create them:
+        deploy_schedules(client, function, config.schedules)
+    else:
+        # If we did not remove existing schedules, we should also not add new ones. Warn if user gave any:
+        if (n_schedules := len(config.schedules)) :
+            logger.warning(
+                f"Skipping step of deploying schedules ({n_schedules} were given). "
+                "Parameter 'remove_schedules=False' was passed, so this is to avoid creating duplicate schedules, "
+                "as they do not have an unique identifier."
+            )
     # Return output parameter (GitHub magic syntax):
     print(f"::set-output name=function_external_id::{function.external_id}")
 
