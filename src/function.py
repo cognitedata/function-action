@@ -52,15 +52,15 @@ def retrieve_dataset(client: CogniteClient, ext_id: str) -> DataSet:
 
 
 def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Function:
+    function = client.functions.retrieve(external_id=external_id)
+    if function is None:  # Should not ever happen... :shrug:
+        err = f"No function with {external_id=} exists!"
+        logger.warning(err)
+        raise FunctionDeployError(err)
+
     t0 = time.time()
     while time.time() <= t0 + wait_time_sec:
-        function = client.functions.retrieve(external_id=external_id)
-        if function is None:  # Should not ever happen... :shrug:
-            err = f"No function with {external_id=} exists!"
-            logger.warning(err)
-            raise FunctionDeployError(err)
-
-        elif function.status == FunctionStatus.READY:
+        if function.status == FunctionStatus.READY:
             logger.info(f"Function deployment successful! Deployment took {precisedelta(time.time()-t0)}")
             return function
 
@@ -68,7 +68,9 @@ def await_function_deployment(client: CogniteClient, external_id: str, wait_time
             err_msg = f"Error message: {function.error['message']}.\nTrace: {function.error['trace']}"
             logger.warning(f"Deployment failed after {precisedelta(time.time()-t0)}! {err_msg}")
             raise FunctionDeployError(err_msg)
+
         time.sleep(5)
+        function.update()
 
     err = f"Function {external_id} (ID: {function.id}) did not deploy within {precisedelta(wait_time_sec)}."
     logger.error(err)

@@ -29,7 +29,12 @@ from function import (
     ],
 )
 def test_await_function_deployment(retrieve_status, wait_time_seconds, expectation, cognite_experimental_client_mock):
-    responses = [Function(status=status, error={"trace": "foo", "message": "bar"}) for status in retrieve_status]
+    responses = [
+        Function(
+            status=status, error={"trace": "foo", "message": "bar"}, cognite_client=cognite_experimental_client_mock
+        )
+        for status in retrieve_status
+    ]
     cognite_experimental_client_mock.functions.retrieve.side_effect = responses
     with expectation:
         r = await_function_deployment(cognite_experimental_client_mock, "", wait_time_seconds)
