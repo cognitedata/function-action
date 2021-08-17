@@ -52,8 +52,7 @@ def retrieve_dataset(client: CogniteClient, ext_id: str) -> DataSet:
 
 
 def await_function_deployment(client: CogniteClient, external_id: str, wait_time_sec: int) -> Function:
-    function = client.functions.retrieve(external_id=external_id)
-    if function is None:  # Should not ever happen... :shrug:
+    if (function := client.functions.retrieve(external_id=external_id)) is None:
         err = f"No function with {external_id=} exists!"
         logger.warning(err)
         raise FunctionDeployError(err)
