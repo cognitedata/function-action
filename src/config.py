@@ -69,7 +69,7 @@ class TenantConfig(BaseModel):
         deploy_project = cls._verify_credentials("deployment", values)
         runtime_project = cls._verify_credentials("runtime", values)
         if deploy_project != runtime_project:
-            raise ValueError(
+            logger.warning(
                 "The deployment- and runtime credentials are for separate projects, "
                 f"deployment: {deploy_project}, runtime: {runtime_project}"
             )
