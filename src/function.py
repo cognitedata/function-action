@@ -198,7 +198,7 @@ def zip_and_upload_folder(client: CogniteClient, config: FunctionConfig, name: s
 
 
 # Note: Do NOT catch CogniteNotFoundError (used in data set check, if it fails, it will always fail)
-@retry(exceptions=(IOError, FunctionDeployTimeout, FunctionDeployError), tries=5, delay=2, jitter=2)
+@retry(exceptions=(IOError, FunctionDeployError), tries=5, delay=2, jitter=2)
 def upload_and_create_function(client: CogniteClient, config: FunctionConfig) -> Function:
     delete_single_cognite_function(client, config.external_id, config.remove_schedules)
     zip_file_name = get_file_name(config.external_id)  # Also file external ID
