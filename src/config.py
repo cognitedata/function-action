@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Pydantic fields:
 NonEmptyString = constr(min_length=1, strip_whitespace=True)
 
-DEPLOY_WAIT_TIME_SEC = 1200  # 20 minutes
+DEPLOY_WAIT_TIME_SEC = 1500  # 25 minutes
 
 
 class TenantConfig(BaseModel):
