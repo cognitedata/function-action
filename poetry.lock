@@ -240,14 +240,14 @@ test = ["pytest-cov"]
 
 [[package]]
 name = "cognite-sdk"
-version = "2.56.1"
+version = "2.47.0"
 description = "Client library for Cognite Data Fusion (CDF)"
 category = "main"
 optional = false
 python-versions = ">=3.5"
 files = [
-    {file = "cognite-sdk-2.56.1.tar.gz", hash = "sha256:76fe6a5b7a45a369dbaa5aebbf02b31257b1cf4ccf7115634f8eac564b0d4c2e"},
-    {file = "cognite_sdk-2.56.1-py3-none-any.whl", hash = "sha256:fd544a535c736ee823c8df1c3adfacee75f15c3c45332af27180551dff9b939f"},
+    {file = "cognite-sdk-2.47.0.tar.gz", hash = "sha256:92970ddfb105bdd78edf869c6bd0a7d3efb89a25196f2a33e49535f5b89349fa"},
+    {file = "cognite_sdk-2.47.0-py3-none-any.whl", hash = "sha256:dac81690dac84dff9156cea79b07954e2f621412d8af93f4c452e9b9d3aa7740"},
 ]
 
 [package.dependencies]
@@ -1469,4 +1469,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "ce537fcd33d811a4529178def3460f59c191ac4669964dc99d8fe244e9caa0ec"
+content-hash = "85ac8687465d9176ebcae5661e27e99220df9fea72be4a34b4185420085fb935"
