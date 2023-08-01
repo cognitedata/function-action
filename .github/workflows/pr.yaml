@@ -31,7 +31,7 @@ jobs:
 
     - name: Check application security
       run: |
-        poetry run bandit -r . -s B101,B322
+        poetry run bandit -r . -s B101
 
     - name: Run tests
       run: |
